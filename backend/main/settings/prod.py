@@ -79,3 +79,17 @@ LOGGING['loggers']['django']['level'] = 'INFO'
 if FRONTEND_URL:
     FRONTEND_PASSWORD_RESET_URL = os.getenv("FRONTEND_PASSWORD_RESET_URL", f"{FRONTEND_URL}/reset-password")
     FRONTEND_VERIFY_EMAIL_URL = os.getenv("FRONTEND_VERIFY_EMAIL_URL", f"{FRONTEND_URL}/verify-email")
+
+# Channels settings for production
+# This overrides the Docker-specific setting from dev.py and uses the
+# REDIS_URL provided by cloud environments like Render.
+REDIS_URL = os.environ.get('REDIS_URL')
+if REDIS_URL:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
+        },
+    }
