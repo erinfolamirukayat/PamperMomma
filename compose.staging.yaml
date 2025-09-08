@@ -1,0 +1,69 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.staging
+    container_name: pampermomma-backend-staging
+    restart: unless-stopped
+    expose:
+      - 8000
+    env_file:
+      - ./backend/.env.staging
+    depends_on:
+      db:
+        condition: service_healthy
+  frontend:
+      build:
+        context: ./frontend
+        dockerfile: Dockerfile.staging
+        args:
+          NEXT_PUBLIC_API_BASE_URL: http://backend.vanguardhosting.local
+      container_name: pampermomma-frontend-staging
+      restart: unless-stopped
+      expose:
+        - 3000
+      env_file:
+        - ./frontend/.env.staging
+      depends_on:
+        backend:
+          condition: service_started
+  db:
+    image: postgres:latest
+    container_name: pampermomma-db-staging
+    restart: always
+    user: postgres
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  traefik:
+    image: traefik:v3.5
+    container_name: pampermomma-traefik-staging
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "8080:8080"  # Traefik dashboard (remove in production)
+    volumes:
+      - ./traefik/staging/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/staging/dynamic:/etc/traefik/dynamic:ro
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  db-data:
+
+secrets:
+  db-password:
+    file: db/.secrets/password.staging.txt

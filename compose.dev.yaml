@@ -1,0 +1,76 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: pampermomma-backend-dev
+    restart: unless-stopped
+    expose:
+      - 8000
+    volumes:
+      - ./backend:/app
+    env_file:
+      - ./backend/.env.development
+    depends_on:
+      db:
+        condition: service_healthy
+  frontend:
+      build:
+        context: ./frontend
+        dockerfile: Dockerfile.dev
+        args:
+          NEXT_PUBLIC_API_BASE_URL: http://backend.vanguardhosting.local
+      container_name: pampermomma-frontend-dev
+      restart: unless-stopped
+      expose:
+        - 3000
+      volumes:
+        - ./frontend/app:/app/app
+        - ./frontend/public:/app/public
+        - ./frontend/components:/app/components
+        - ./frontend/lib:/app/lib
+        - ./frontend/.next:/app/.next
+      env_file:
+        - ./frontend/.env.development
+      depends_on:
+        backend:
+          condition: service_started
+  db:
+    image: postgres:latest
+    container_name: pampermomma-db-dev
+    restart: always
+    user: postgres
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres #TODO: make sure to use your prefered db name
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+    expose:
+      - 5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  traefik:
+    image: traefik:v3.5
+    container_name: pampermomma-traefik-dev
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "8080:8080"  # Traefik dashboard
+    volumes:
+      - ./traefik/dev/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/dev/dynamic:/etc/traefik/dynamic:ro
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  db-data:
+secrets:
+  db-password:
+    file: db/.secrets/password.dev.txt

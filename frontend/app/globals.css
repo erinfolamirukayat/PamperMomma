@@ -1,0 +1,243 @@
+@import "tailwindcss";
+
+/* :root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {}
+} */
+
+@theme inline {
+  --color-background: #ffffff;
+  --color-foreground: var(--color-neutral-900);
+  --font-sans: var(--font-public-sans);
+}
+
+@theme {
+  /* Color Scheme */
+  /* Neutral colors */
+  --color-neutral-100: #F9FAFB;
+  --color-neutral-200: #EBEDEF;
+  --color-neutral-300: #C2C9D1;
+  --color-neutral-400: #9BA6B0;
+  --color-neutral-500: #647587;
+  --color-neutral-600: #4D5966;
+  --color-neutral-700: #394756;
+  --color-neutral-800: #29333D;
+  --color-neutral-900: #1B2632;
+  /* Primary colors */
+  --color-primary-100: #F7F0FF;
+  --color-primary-200: #B794E0;
+  --color-primary-300: #B794E0;
+  --color-primary-400: #8B5FBF;
+  --color-primary-500: #7F55B1;
+  --color-primary-600: #7541B4;
+  --color-primary-700: #643A98;
+  --color-primary-800: #4B2678;
+  --color-primary-900: #3E2659;
+  /* Accent Orange colors */
+  --color-orange-100: #FFF7DB;
+  --color-orange-200: #FBDB83;
+  --color-orange-300: #F6BD37;
+  --color-orange-400: #F4AF25;
+  --color-orange-500: #FBA702;
+  --color-orange-600: #CF8C07;
+  --color-orange-700: #9D650B;
+  --color-orange-800: #794906;
+  --color-orange-900: #4D2A00;
+  /* Accent Red colors */
+  --color-red-100: #FFE4DB;
+  --color-red-200: #F5A489;
+  --color-red-300: #E96D44;
+  --color-red-400: #E85E30;
+  --color-red-500: #D94312;
+  --color-red-600: #AA3109;
+  --color-red-700: #973211;
+  --color-red-800: #76250A;
+  --color-red-900: #522414;
+  /* Accent Green colors */
+  --color-green-100: #DBFFE0;
+  --color-green-200: #89F596;
+  --color-green-300: #44E957;
+  --color-green-400: #30E846;
+  --color-green-500: #09AA1C;
+  --color-green-600: #0A8F19;
+  --color-green-700: #056B11;
+  --color-green-800: #03540C;
+  --color-green-900: #013707;
+
+  /* Typography */
+  --text-headline-desktop-large: 4rem;
+  --text-headline-desktop-large--line-height: 1.2;
+  --text-headline-desktop-large--font-weight: 900;
+
+  --text-headline-desktop: 3rem;
+  --text-headline-desktop--line-height: 1.2;
+  --text-headline-desktop--font-weight: 600;
+
+  --text-headline-desktop-small: 2.25rem;
+  --text-headline-desktop-small--line-height: 1.2;
+  --text-headline-desktop-small--font-weight: 600;
+
+  --text-headline-mobile-large: 3rem;
+  --text-headline-mobile-large--line-height: 1.2;
+  --text-headline-mobile-large--font-weight: 900;
+
+  --text-headline-mobile: 2rem;
+  --text-headline-mobile--line-height: 1.2;
+  --text-headline-mobile--font-weight: 600;
+
+  --text-headline-mobile-small: 1.5rem;
+  --text-headline-mobile-small--line-height: 1.2;
+  --text-headline-mobile-small--font-weight: 500;
+
+  --text-title-desktop-large: 1.75rem;
+  --text-title-desktop-large--line-height: 1.1;
+  --text-title-desktop-large--font-weight: 700;
+
+  --text-title-desktop: 1.5rem;
+  --text-title-desktop--line-height: 1.1;
+  --text-title-desktop--font-weight: 700;
+
+  --text-title-desktop-small: 1.125rem;
+  --text-title-desktop-small--line-height: 1.1;
+  --text-title-desktop-small--font-weight: 600;
+
+  --text-title-mobile-large: 1.5rem;
+  --text-title-mobile-large--line-height: 1.1;
+  --text-title-mobile-large--font-weight: 700;
+
+  --text-title-mobile: 1.25rem;
+  --text-title-mobile--line-height: 1.1;
+  --text-title-mobile--font-weight: 700;
+
+  --text-title-mobile-small: 1rem;
+  --text-title-mobile-small--line-height: 1.1;
+  --text-title-mobile-small--font-weight: 600;
+
+  --text-body-desktop-large: 1.25rem;
+  --text-body-desktop-large--line-height: 1.5;
+  --text-body-desktop-large--font-weight: 400;
+
+  --text-body-desktop: 1.125rem;
+  --text-body-desktop--line-height: 1.5;
+  --text-body-desktop--font-weight: 400;
+
+  --text-body-desktop-small: 1rem;
+  --text-body-desktop-small--line-height: 1.5;
+  --text-body-desktop-small--font-weight: 400;
+
+  --text-body-mobile-large: 1.125rem;
+  --text-body-mobile-large--line-height: 1.5;
+  --text-body-mobile-large--font-weight: 400;
+
+  --text-body-mobile: 1rem;
+  --text-body-mobile--line-height: 1.5;
+  --text-body-mobile--font-weight: 400;
+
+  --text-body-mobile-small: 0.875rem;
+  --text-body-mobile-small--line-height: 1.5;
+  --text-body-mobile-small--font-weight: 400;
+
+  --text-label-desktop-large: 1rem;
+  --text-label-desktop-large--line-height: 1.3;
+  --text-label-desktop-large--font-weight: 500;
+
+  --text-label-desktop: 0.875rem;
+  --text-label-desktop--line-height: 1.3;
+  --text-label-desktop--font-weight: 600;
+
+  --text-label-desktop-small: 0.875rem;
+  --text-label-desktop-small--line-height: 1.3;
+  --text-label-desktop-small--font-weight: 400;
+
+  --text-label-mobile-large: 0.875rem;
+  --text-label-mobile-large--line-height: 1.3;
+  --text-label-mobile-large--font-weight: 500;
+
+  --text-label-mobile: 0.75rem;
+  --text-label-mobile--line-height: 1.3;
+  --text-label-mobile--font-weight: 600;
+
+  --text-label-mobile-small: 0.75rem;
+  --text-label-mobile-small--line-height: 1.3;
+  --text-label-mobile-small--font-weight: 400;
+}
+
+/* Custom Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-neutral-100);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-600));
+  border-radius: 10px;
+  border: 1px solid var(--color-neutral-200);
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-700));
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-800));
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--color-neutral-100);
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-primary-500) var(--color-neutral-100);
+}
+
+/* Hover effect for Firefox */
+*:hover {
+  scrollbar-color: var(--color-primary-600) var(--color-neutral-200);
+}
+
+/* Custom scrollbar for modal and sidebar containers */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, var(--color-primary-300), var(--color-primary-500));
+  border-radius: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, var(--color-primary-400), var(--color-primary-600));
+}
+
+/* Thin scrollbar for specific components */
+.thin-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-primary-400);
+  border-radius: 4px;
+}
+
+.thin-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary-500);
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
