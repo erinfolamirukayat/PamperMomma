@@ -39,14 +39,16 @@ DATABASES['default'] = dj_database_url.config(
 
 # Static files (served by WhiteNoise)
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# File storage configuration using the modern STORAGES setting
 STORAGES = {
+    "default": {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }
-
-# Media files (user uploads) using Supabase S3-compatible storage
-DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
 
 AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID')
 AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY')
