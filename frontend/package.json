@@ -28,5 +28,11 @@
     "eslint-config-next": "15.3.3",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "hulk-react-utils": {
+      "react": "$react",
+      "react-dom": "$react-dom"
+    }
   }
 }
