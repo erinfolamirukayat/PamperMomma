@@ -31,6 +31,7 @@ CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', '')
 CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_str.split(',') if CORS_ALLOWED_ORIGINS_str else []
 
 CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_CREDENTIALS = True  # Allow cookies to be sent with cross-origin requests
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
 # Database configuration using Supabase URI

@@ -159,10 +159,6 @@ MEDIA_ROOT = BASE_DIR / "mediafiles"
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-# CORS settings
-CORS_ALLOW_ALL_ORIGINS = True
-CORS_ALLOW_CREDENTIALS = True
-
 # CSRF settings
 CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = [
