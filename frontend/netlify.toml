@@ -1,0 +1,6 @@
+# This rewrite rule is the magic that allows client-side routing to work on Netlify.
+# It tells Netlify to serve the index.html file for any path that doesn't match an existing file.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
