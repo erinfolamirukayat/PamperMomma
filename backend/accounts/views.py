@@ -352,8 +352,10 @@ class PasswordResetViewSet(viewsets.ViewSet):
 
         otp_entry = OTPRequest.objects.filter(
             ref=self.__get_ref(email), is_verified=True).order_by('-created_at').first()
-        if not otp_entry or not otp_entry.is_valid(device_identity) and otp_entry.is_verified:
-            return Response({'detail': 'OTP not verified or expired'}, status=status.HTTP_400_BAD_REQUEST)
+        # The OTP must exist and still be valid (not expired, correct device).
+        # The `is_verified=True` is already handled by the query filter.
+        if not otp_entry or not otp_entry.is_valid(device_identity):
+            return Response({'detail': 'OTP not verified or has expired'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:
@@ -559,8 +561,10 @@ class EmailVerificationViewSet(viewsets.ViewSet):
 
         otp_entry = OTPRequest.objects.filter(
             ref=self.__get_ref(email), is_verified=True).order_by('-created_at').first()
-        if not otp_entry or not otp_entry.is_valid(device_identity) and otp_entry.is_verified:
-            return Response({'detail': 'OTP not verified or expired'}, status=status.HTTP_400_BAD_REQUEST)
+        # The OTP must exist and still be valid (not expired, correct device).
+        # The `is_verified=True` is already handled by the query filter.
+        if not otp_entry or not otp_entry.is_valid(device_identity):
+            return Response({'detail': 'OTP not verified or has expired'}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.filter(email=email).first()
         if not user:
