@@ -32,7 +32,10 @@ CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_str.split(',') if CORS_ALLOWED_ORIGI
 
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOW_CREDENTIALS = True  # Allow cookies to be sent with cross-origin requests
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+# CSRF_TRUSTED_ORIGINS expects hostnames, not full URLs with schemes.
+# We derive it from CORS_ALLOWED_ORIGINS by removing 'https://' and 'http://'.
+CSRF_TRUSTED_ORIGINS = [origin.replace("https://", "").replace("http://", "") for origin in CORS_ALLOWED_ORIGINS]
 
 # Database configuration using Supabase URI
 DATABASES['default'] = dj_database_url.config(
