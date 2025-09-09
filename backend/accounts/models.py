@@ -17,8 +17,8 @@ class UserManager(BaseUserManager):
         """
         if not email:
             raise ValueError("Users must have an email address")
-        user = self.model(email=email, **extra_fields)
-        user.password = make_password(password)
+        user = self.model(email=self.normalize_email(email), **extra_fields)
+        user.set_password(password)
         user.save(using=self._db)
         return user
 
@@ -84,7 +84,6 @@ class OTPRequest(TimeStampedBaseModel):
     device_identity = models.CharField(max_length=255)
     otp = models.CharField(max_length=6)
     is_verified = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         verbose_name = _("OTP Request")
