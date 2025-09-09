@@ -79,7 +79,7 @@ class TimeStampedBaseModel(models.Model):
 
 
 class OTPRequest(TimeStampedBaseModel):
-    ref = models.TextField()
+    ref = models.CharField(max_length=300, db_index=True)
     # Hashed random token for device identity
     device_identity = models.CharField(max_length=255)
     otp = models.CharField(max_length=6)
