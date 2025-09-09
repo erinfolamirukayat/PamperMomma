@@ -93,3 +93,22 @@ if REDIS_URL:
             },
         },
     }
+
+# Firebase settings for production
+# This overrides the file-based approach from dev.py.
+# The service account key is loaded from a multi-line environment variable.
+import json
+import firebase_admin
+from firebase_admin import credentials
+
+FIREBASE_SERVICE_ACCOUNT_KEY_JSON = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY_JSON')
+
+# Initialize Firebase only if the key is present and it hasn't been initialized already
+if FIREBASE_SERVICE_ACCOUNT_KEY_JSON and not firebase_admin._apps:
+    try:
+        cred_json = json.loads(FIREBASE_SERVICE_ACCOUNT_KEY_JSON)
+        cred = credentials.Certificate(cred_json)
+        firebase_admin.initialize_app(cred)
+    except (json.JSONDecodeError, ValueError) as e:
+        # In a real production scenario, you would want to log this error.
+        print(f"Error initializing Firebase: {e}")

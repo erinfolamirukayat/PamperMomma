@@ -1,11 +1,7 @@
 # This file configures the build and deployment settings for Netlify.
 [build]
-  # This is the command to build your Next.js application.
   command = "npm run build"
-  # Next.js outputs the build to the ".next" directory.
   publish = ".next"
 
-[build.environment]
-  # This environment variable tells your frontend where to find the backend API.
-  # The NEXT_PUBLIC_ prefix makes it available in the browser.
-  NEXT_PUBLIC_API_BASE_URL = "https://pampermomma-backend.onrender.com"
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

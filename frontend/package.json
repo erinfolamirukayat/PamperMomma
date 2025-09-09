@@ -12,9 +12,10 @@
     "@gsap/react": "^2.1.2",
     "@headlessui/react": "^2.2.4",
     "@iconify/react": "^6.0.0",
+    "@netlify/plugin-nextjs": "^5.13.1",
     "gsap": "^3.13.0",
     "hulk-react-utils": "^1.0.6",
-    "next": "15.3.3",
+    "next": "^15.5.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
