@@ -54,15 +54,10 @@ class UserViewSet(viewsets.mixins.ListModelMixin,
         Sign up a new user.
         """
         serializer = UserCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            # Create a new user instance without saving it yet
-            user = User(**serializer.validated_data)
-            # Hash the password
-            user.set_password(serializer.validated_data['password'])
-            # Save the user to the database
-            user.save()
-            return Response(UserCreateSerializer(user).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        # Return data using the general UserSerializer to avoid exposing sensitive info
+        return Response(UserSerializer(user).data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema_view(

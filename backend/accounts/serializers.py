@@ -13,6 +13,12 @@ class UserCreateSerializer(serializers.ModelSerializer):
         fields = ['first_name', 'last_name', 'email', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def create(self, validated_data):
+        """
+        Use the custom manager's create_user method to handle password hashing.
+        """
+        return User.objects.create_user(**validated_data)
+
 
 class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source='get_full_name', read_only=True)
