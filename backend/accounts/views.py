@@ -15,9 +15,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status, viewsets
 from django.contrib.auth import get_user_model
-from .models import OTPRequest
-from .serializers import PhoneNumberSerializer, ResetPasswordWithTokenSerializer, UserCreateSerializer, UserSerializer, UserMeSerializer, ChangeAccountPasswordSerializer, VerifyEmailSerializer
-from .serializers import SendOTPSerializer, VerifyOTPSerializer, ResetPasswordSerializer
+from .models import OTPRequest, PhoneNumber
+from .serializers import (
+    PhoneNumberSerializer, ResetPasswordWithTokenSerializer, UserCreateSerializer,
+    UserSerializer, UserMeSerializer, ChangeAccountPasswordSerializer,
+    VerifyEmailSerializer, VerifyEmailWithTokenSerializer, SendOTPSerializer,
+    VerifyOTPSerializer, ResetPasswordSerializer
+)
 import logging
 import jwt
 from django.conf import settings
@@ -118,18 +122,16 @@ class UserMeViewSet(viewsets.GenericViewSet):
         user = request.user
         serializer = ChangeAccountPasswordSerializer(
             data=request.data)
-        if serializer.is_valid():
-            old_password = serializer.validated_data.get('old_password')
-            new_password = serializer.validated_data.get('new_password')
-            if user.check_password(old_password):
-                user.set_password(new_password)
-                user.save()
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            return Response({
-                "detail": "The old password is not correct"
-            }, status=status.HTTP_406_NOT_ACCEPTABLE)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        serializer.is_valid(raise_exception=True)
+        old_password = serializer.validated_data.get('old_password')
+        new_password = serializer.validated_data.get('new_password')
+        if not user.check_password(old_password):
+            return Response({"detail": "The old password is not correct"},
+                            status=status.HTTP_406_NOT_ACCEPTABLE)
+        user.set_password(new_password)
+        user.save()
+        return Response(status=status.HTTP_200_OK)
+
     @action(methods=['GET'], detail=False, url_path='profile')
     # @swagger_auto_schema(
     #     responses={
@@ -158,11 +160,10 @@ class UserMeViewSet(viewsets.GenericViewSet):
         """
         user = request.user
         serializer = UserMeSerializer(user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(methods=['POST'], detail=False, url_path='add-phone-number')
     # @swagger_auto_schema(
     #     request_body=PhoneNumberSerializer,
@@ -173,22 +174,18 @@ class UserMeViewSet(viewsets.GenericViewSet):
     # )
     def add_phone_number(self, request: Request, *args, **kwargs):
         """
-        Add a phone number to the authenticated user.
+        Add or update a phone number for the authenticated user.
+        This will reset the verification status of the phone number.
         """
         user = request.user
         serializer = PhoneNumberSerializer(data=request.data)
-        if serializer.is_valid():
-            try:
-                user.phone_number.mobile = serializer.validated_data['mobile']
-                user.phone_number.is_verified = False
-                user.phone_number.save()
-            except User.phone_number.RelatedObjectDoesNotExist:
-                serializer.save(user=user)
+        serializer.is_valid(raise_exception=True)
 
-            return Response(PhoneNumberSerializer(user.phone_number).data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+        phone_number, created = PhoneNumber.objects.update_or_create(
+            user=user,
+            defaults={'mobile': serializer.validated_data['mobile'], 'is_verified': False}
+        )
+        return Response(PhoneNumberSerializer(phone_number).data, status=status.HTTP_200_OK)
 
 @extend_schema_view(
     send_otp=extend_schema(
@@ -585,10 +582,10 @@ class EmailVerificationViewSet(viewsets.ViewSet):
         """
         Verify user's email using a JWT token.
         """
-        serializer = ResetPasswordWithTokenSerializer(data=request.data)
+        serializer = VerifyEmailWithTokenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         token = serializer.validated_data['token']
-
+        
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])
             email = payload.get('email')
