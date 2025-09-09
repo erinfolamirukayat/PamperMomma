@@ -37,11 +37,14 @@ CORS_ALLOW_CREDENTIALS = True  # Allow cookies to be sent with cross-origin requ
 # We derive it from CORS_ALLOWED_ORIGINS by removing 'https://' and 'http://'.
 CSRF_TRUSTED_ORIGINS = [origin.replace("https://", "").replace("http://", "") for origin in CORS_ALLOWED_ORIGINS]
 
-# Database configuration using Supabase URI
-DATABASES['default'] = dj_database_url.config(
-    conn_max_age=600,
-    ssl_require=True  # Supabase requires SSL connections
-)
+# Database configuration using Supabase URI.
+# This completely overrides the DATABASES dictionary from dev.py.
+DATABASES = {
+    'default': dj_database_url.config(
+        conn_max_age=600,
+        ssl_require=True  # Supabase requires SSL connections
+    )
+}
 
 # Static files (served by WhiteNoise)
 STATIC_ROOT = BASE_DIR / "staticfiles"
