@@ -24,9 +24,11 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # CORS and CSRF settings for production
-CORS_ALLOWED_ORIGINS = []
-if FRONTEND_URL:
-    CORS_ALLOWED_ORIGINS.append(FRONTEND_URL)
+# This reads the comma-separated string from your Render environment variable
+# (e.g., "http://localhost:3000,https://pampermomma.netlify.app")
+# and turns it into a list that Django expects.
+CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_str.split(',') if CORS_ALLOWED_ORIGINS_str else []
 
 CORS_ALLOW_ALL_ORIGINS = False
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
