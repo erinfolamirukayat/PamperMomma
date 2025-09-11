@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from 'next/navigation';
-import React, { useEffect, useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { Icon } from '@iconify/react';
 import { RegistryHeader, RegistryOverview } from '@/components/registry';
 import { formatDate } from '@/lib/helper';
@@ -60,13 +60,13 @@ function Page() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sharableId]);
 
-    const handleInitiateContribution = (service: Service, amount: number) => {
+    const handleInitiateContribution = useCallback((service: Service, amount: number) => {
         setSelectedService(service);
         createPaymentIntent({
             method: 'POST',
             body: JSON.stringify({ service_id: service.id, amount })
         });
-    };
+    }, [createPaymentIntent]);
 
     const { availableServices, completedServices, totalRaised, totalCost } = useRegistryData(registriesData);
 
