@@ -1,7 +1,7 @@
 'use client';
 
 import { Service } from '@/lib/services/registry/types';
-import { ServiceContributionFormModal, ServiceContributionsCard, ServiceDetailsCard, ServiceHero, ServiceQuickStatCard, ServiceTimelineCard } from '@/components/service.tsx';
+import { ServiceContributionFormModal, ServiceContributionsCard, ServiceDetailsCard, ServiceHero, ServiceQuickStatCard, ServiceTimelineCard } from './index';
 
 interface ServiceDetailViewProps {
     serviceData: Service;
