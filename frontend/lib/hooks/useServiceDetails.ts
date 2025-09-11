@@ -12,7 +12,8 @@ export function useServiceDetails(serviceId: string | string[] | undefined) {
         if (serviceId) {
             goService({ method: 'GET' });
         }
-    }, [serviceId, goService]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [serviceId]);
 
     const completionPercentage = useMemo(() => {
         if (!serviceData) return "0.0";

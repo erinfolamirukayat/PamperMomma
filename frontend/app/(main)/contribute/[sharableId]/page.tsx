@@ -26,6 +26,7 @@ function Page() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const [contributionAmount, setContributionAmount] = useState<number>(0);
 
     const fetchCallbacks = useMemo(() => ({
         onSuccess: () => setStatus('success'),
@@ -62,6 +63,7 @@ function Page() {
 
     const handleInitiateContribution = useCallback((service: Service, amount: number) => {
         setSelectedService(service);
+        setContributionAmount(amount);
         createPaymentIntent({
             method: 'POST',
             body: JSON.stringify({ service_id: service.id, amount })
@@ -95,10 +97,12 @@ function Page() {
                         serviceId={selectedService.id}
                         serviceName={selectedService.name}
                         clientSecret={clientSecret}
+                        amount={contributionAmount}
                         onClose={() => {
                             setIsModalOpen(false);
                             setClientSecret(null);
                             setSelectedService(null);
+                            setContributionAmount(0);
                         }}
                     />
                 </Elements>

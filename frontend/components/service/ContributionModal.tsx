@@ -13,10 +13,11 @@ interface ContributionModalProps {
     serviceId: number;
     serviceName: string;
     clientSecret: string;
+    amount: number;
     onClose: () => void;
 }
 
-export function ContributionModal({ sharableId, serviceId, serviceName, clientSecret, onClose }: ContributionModalProps) {
+export function ContributionModal({ sharableId, serviceId, serviceName, clientSecret, amount, onClose }: ContributionModalProps) {
     const stripe = useStripe();
     const elements = useElements();
 
@@ -37,7 +38,7 @@ export function ContributionModal({ sharableId, serviceId, serviceName, clientSe
             elements,
             confirmParams: {
                 // Make sure to change this to your payment completion page
-                return_url: `${window.location.origin}/contribution-success?sharable_id=${sharableId}`,
+                return_url: `${window.location.origin}/contribution-success?sharable_id=${sharableId}&amount=${amount}`,
             },
         });
 
