@@ -1,39 +1,109 @@
 "use client";
 
 import { useParams } from 'next/navigation';
-import React, { useEffect } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { Icon } from '@iconify/react';
 import { RegistryHeader, RegistryOverview } from '@/components/registry';
 import { formatDate } from '@/lib/helper';
-import { ServiceWidget } from '@/components/service';
-import { useHulkFetch } from 'hulk-react-utils';
-import { PublicRegistryProps } from '@/lib/services/registry/types';
+import { ServiceWidget } from '@/components/service/ServiceWidget';
+import { HulkFetchErrorProps, useHulkFetch } from 'hulk-react-utils';
+import { PublicRegistryProps, Service } from '@/lib/services/registry/types';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
+import { ContributionModal } from '@/components/service/ContributionModal';
+import { useRegistryData } from '@/lib/hooks/useRegistryData';
 
 
 function Page() {
+    const stripePromise = useMemo(() => {
+        const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+        return key ? loadStripe(key) : null;
+    }, []);
+
     const { sharableId } = useParams();
+    const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [error, setError] = useState<HulkFetchErrorProps | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedService, setSelectedService] = useState<Service | null>(null);
+    const [clientSecret, setClientSecret] = useState<string | null>(null);
+
+    const fetchCallbacks = useMemo(() => ({
+        onSuccess: () => setStatus('success'),
+        onError: (e: HulkFetchErrorProps) => {
+            setStatus('error');
+            setError(e);
+        }
+    }), []);
+
     const {
         dispatch: goRegistries,
         data: registriesData
-    } = useHulkFetch<PublicRegistryProps>(`/registries/public/${sharableId}/`);
+    } = useHulkFetch<PublicRegistryProps>(`/registries/public/${sharableId}/`, fetchCallbacks);
+
+    const paymentIntentCallbacks = useMemo(() => ({
+        onSuccess: (data) => {
+            setClientSecret(data.clientSecret);
+            setIsModalOpen(true);
+        },
+        onError: (e) => {
+            console.error("Failed to create payment intent:", e);
+        }
+    }), []);
+
+    const { dispatch: createPaymentIntent } = useHulkFetch<{ clientSecret: string }>('/registries/payments/create-payment-intent/', paymentIntentCallbacks);
 
     useEffect(() => {
         if (sharableId) {
+            setStatus('loading');
             goRegistries({ method: 'GET' });
         }
-    }, [sharableId])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [sharableId]);
 
-    const availableServices = registriesData?.services?.filter((service) => service.is_available && !service.is_completed) ?? [];
-    const completedServices = registriesData?.services?.filter((service) => service.is_completed) ?? [];
+    const handleInitiateContribution = (service: Service, amount: number) => {
+        setSelectedService(service);
+        createPaymentIntent({
+            method: 'POST',
+            body: JSON.stringify({ service_id: service.id, amount })
+        });
+    };
 
-    // Calculate total contributions and costs
-    const totalRaised = registriesData?.services?.reduce((sum, service) =>
-        sum + parseFloat(service.total_contributions || '0'), 0) ?? 0;
-    const totalCost = registriesData?.services?.reduce((sum, service) =>
-        sum + parseFloat(service.total_cost || '0'), 0) ?? 0;
+    const { availableServices, completedServices, totalRaised, totalCost } = useRegistryData(registriesData);
+
+    if (status === 'loading') {
+        return (
+            <div className='flex-1 flex items-center justify-center'>
+                <Icon icon="line-md:loading-twotone-loop" className="h-12 w-12 text-primary-500" />
+            </div>
+        )
+    }
+
+    if (status === 'error') {
+        return (
+            <div className='flex-1 flex items-center justify-center text-center p-6'>
+                <p className='text-red-500'>Error loading registry: {error?.message}</p>
+            </div>
+        )
+    }
 
     return (
         <main className='relative min-h-full flex-1'>
+            {isModalOpen && clientSecret && selectedService && stripePromise && (
+                <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <ContributionModal
+                        sharableId={sharableId as string}
+                        serviceId={selectedService.id}
+                        serviceName={selectedService.name}
+                        clientSecret={clientSecret}
+                        onClose={() => {
+                            setIsModalOpen(false);
+                            setClientSecret(null);
+                            setSelectedService(null);
+                        }}
+                    />
+                </Elements>
+            )}
+
             {registriesData && (
                 <>
                     {/* Registry Header */}
@@ -48,8 +118,8 @@ function Page() {
 
                     {/* Dashboard Cards */}
                     <RegistryOverview
-                        available_services={availableServices.length.toString()}
-                        completed_services={completedServices.length.toString()}
+                        available_services={String(availableServices.length)}
+                        completed_services={String(completedServices.length)}
                         total_raised={`$${totalRaised.toFixed(2)}`}
                         total_cost={`$${totalCost.toFixed(2)}`}
                     />
@@ -66,6 +136,7 @@ function Page() {
                             description='Help support these services for the new mom'
                             services={availableServices}
                             context='public'
+                            onContribute={handleInitiateContribution}
                         />
                     )}
 

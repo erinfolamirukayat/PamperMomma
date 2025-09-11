@@ -1,6 +1,7 @@
 "use client";
 
 import { Icon } from "@iconify/react";
+import { useState } from "react";
 import { DashboardCard } from "./cards";
 import { Registry, SharedRegistry } from "@/lib/services/registry/types";
 import { formatDate, getDaysUntilArrival } from "@/lib/helper";
@@ -17,6 +18,7 @@ export interface RegistryHeaderProps {
 
 
 export function RegistryHeader(props: RegistryHeaderProps) {
+    const [copied, setCopied] = useState(false);
     const getSharableLink = () => {
         if (!props.shareableId) return '';
         return `${window.location.origin}/contribute/${props.shareableId}`;
@@ -24,7 +26,8 @@ export function RegistryHeader(props: RegistryHeaderProps) {
     const onShareClick = () => {
         if (props.shareableId) {
             navigator.clipboard.writeText(getSharableLink());
-            alert('Shareable link copied to clipboard! It can be shared with friends and family to contribute to your registry.');
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2500); // Reset after 2.5 seconds
         }
     }
     return (
@@ -58,9 +61,9 @@ export function RegistryHeader(props: RegistryHeaderProps) {
                         </div>
                     </div>
                     {props.shareableId && (
-                        <button onClick={onShareClick} className='flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors text-label-desktop'>
-                            <Icon icon="material-symbols-light:share-outline" className="h-5 w-5" />
-                            Share Pamper Registry
+                        <button onClick={onShareClick} className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 text-label-desktop ${copied ? 'bg-green-500 text-white' : 'bg-primary-500 text-white hover:bg-primary-600'}`}>
+                            <Icon icon={copied ? "material-symbols:check-circle-outline-rounded" : "material-symbols-light:share-outline"} className="h-5 w-5" />
+                            {copied ? 'Link Copied!' : 'Share Pamper Registry'}
                         </button>
                     )}
                 </div>
@@ -122,7 +125,7 @@ export function FinancialSummary(props: FinancialSummaryProps) {
                     <div className='grid grid-cols-2 sm:grid-cols-3 gap-4'>
                         <div className='text-center'>
                             <p className='text-label-desktop text-neutral-600'>Total Contributions</p>
-                            <p className='text-title-desktop-large text-green-600'>{props.total_contribution}</p>
+                            <p className='text-title-desktop-large text-green-600'>${props.total_contribution}</p>
                         </div>
                         <div className='text-center'>
                             <p className='text-label-desktop text-neutral-600'>Total Withdrawn</p>

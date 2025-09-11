@@ -32,9 +32,9 @@ export function Menubar(props: {
 
 
     useEffect(() => {
-        goRegistries({ method: 'GET' })
-        goShared({ method: 'GET' })
-    }, [registryId])
+        goRegistries({ method: 'GET' });
+        goShared({ method: 'GET' });
+    }, []);
 
     const onRegistrySwitch = (e: any) => {
         const value = e.target.value

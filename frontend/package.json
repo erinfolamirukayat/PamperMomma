@@ -13,6 +13,8 @@
     "@headlessui/react": "^2.2.4",
     "@iconify/react": "^6.0.0",
     "@netlify/plugin-nextjs": "^5.13.1",
+    "@stripe/react-stripe-js": "^4.0.2",
+    "@stripe/stripe-js": "^7.9.0",
     "gsap": "^3.13.0",
     "hulk-react-utils": "^1.0.6",
     "next": "^15.5.2",

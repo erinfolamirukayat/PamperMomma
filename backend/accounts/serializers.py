@@ -53,9 +53,10 @@ class UserMeSerializer(serializers.ModelSerializer):
     phone_number = PhoneNumberSerializer(required=False, read_only=True)
     class Meta:
         model = User
-        exclude = ['password', 'is_superuser', 'is_staff', 'firebase_uid']
-        read_only_fields = ['id', 'date_joined', 'last_login', 'is_active', 'is_staff',
-                            'is_superuser', 'email_verified', 'email', 'groups', 'user_permissions']
+        # Explicitly list fields to prevent accidental exposure of sensitive data
+        fields = ['id', 'first_name', 'last_name', 'email', 'email_verified', 'phone_number', 'date_joined', 'last_login']
+        read_only_fields = ['id', 'email', 'email_verified', 'phone_number', 'date_joined', 'last_login']
+
 
 
 class ChangeAccountPasswordSerializer(serializers.Serializer):

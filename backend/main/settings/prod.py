@@ -83,10 +83,12 @@ SECURE_HSTS_PRELOAD = True
 LOGGING['handlers']['console']['formatter'] = 'simple'
 LOGGING['loggers']['django']['level'] = 'INFO'
 
-# Update frontend URLs for emails to use the production frontend URL
-if FRONTEND_URL:
-    FRONTEND_PASSWORD_RESET_URL = os.getenv("FRONTEND_PASSWORD_RESET_URL", f"{FRONTEND_URL}/reset-password")
-    FRONTEND_VERIFY_EMAIL_URL = os.getenv("FRONTEND_VERIFY_EMAIL_URL", f"{FRONTEND_URL}/verify-email")
+# Production frontend URLs for emails.
+# These override the development defaults and are required for production.
+if not FRONTEND_URL:
+    raise ImproperlyConfigured("The FRONTEND_URL environment variable must be set in production.")
+FRONTEND_PASSWORD_RESET_URL = f"{FRONTEND_URL}/reset-password"
+FRONTEND_VERIFY_EMAIL_URL = f"{FRONTEND_URL}/verify-email"
 
 # Channels settings for production
 # This overrides the Docker-specific setting from dev.py and uses the
@@ -120,3 +122,7 @@ if FIREBASE_SERVICE_ACCOUNT_KEY_JSON and not firebase_admin._apps:
     except (json.JSONDecodeError, ValueError) as e:
         # In a real production scenario, you would want to log this error.
         print(f"Error initializing Firebase: {e}")
+
+# Stripe settings
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')

@@ -1,8 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from decimal import Decimal
 from django.contrib.auth import get_user_model
-
-
+from accounts.models import TimeStampedBaseModel
+ 
 User = get_user_model()
 
 
@@ -113,7 +114,7 @@ class Service(models.Model):
     cost_per_hour = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=0.00,
+        default=Decimal('0.00'),
         verbose_name=_("Cost Per Hour in USD"),
         help_text=_("The cost per hour for the service."),
     )
@@ -145,7 +146,7 @@ class Service(models.Model):
     total_withdrawn = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=0.00,
+        default=Decimal('0.00'),
         verbose_name=_("Total Withdrawn"),
         help_text=_("The total amount withdrawn for this service."),
     )
@@ -165,16 +166,17 @@ class Service(models.Model):
         Calculates the total contributions made towards this service.
         This can be overridden in subclasses to implement custom contribution logic.
         """
-        if not hasattr(self, 'contributions'):
-            return 0.00
-        return self.contributions.filter(fulfilled=True).aggregate(total=models.Sum('amount'))['total'] or 0.00
+        # The related_name is 'contributions', so self.contributions will always exist.
+        # We filter for successful payments to get the total.
+        total = self.contributions.filter(status='succeeded').aggregate(total=models.Sum('amount'))['total']
+        return total or Decimal('0.00')
     
     def available_withdrawable_amount(self):
         """
         Calculates the available amount that can be withdrawn for this service.
         This is the total contributions minus the total withdrawn amount.
         """
-        return float(self.total_contributions()) - float(self.total_withdrawn)
+        return self.total_contributions() - self.total_withdrawn
     
     def is_completed(self):
         """
@@ -198,14 +200,14 @@ class Service(models.Model):
         return self.registry.created_by == user
     
     def __str__(self):
-        return f"{self.name} (${float(self.total_cost()) - float(self.total_contributions())}) - {self.registry.name} ({self.registry.created_by.email})"
+        return f"{self.name} for {self.registry.name}"
 
 
 class SharedRegistry(models.Model):
     """
     Represents a registry that has been shared with another user.
     """
-    registry = models.OneToOneField(
+    registry = models.ForeignKey(
         Registry,
         on_delete=models.CASCADE,
         related_name="shared_registry",
@@ -230,54 +232,50 @@ class SharedRegistry(models.Model):
         verbose_name_plural = "Shared Registries"
 
     def __str__(self):
-        return f"{self.registry.name} shared with {self.shared_with.username}"
+        return f"{self.registry.name} shared with {self.shared_with.email}"
 
 
-class Contribution(models.Model):
-    """Represents a contribution made towards a service in the registry."""
+class Contribution(TimeStampedBaseModel):
+    """Represents a financial contribution made towards a service via Stripe."""
     service = models.ForeignKey(
         Service,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
         related_name="contributions",
         verbose_name=_("Service"),
         help_text=_("The service for which the contribution is made."),
     )
-    contributor = models.ForeignKey(
-        User,
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-        related_name="contributions",
-        verbose_name=_("Contributor"),
-        help_text=_("The user who made the contribution."),
-    )
     amount = models.DecimalField(
-        blank=True,
-        null=True,
         max_digits=10,
         decimal_places=2,
+        default=Decimal('0.00'),
         verbose_name=_("Amount"),
         help_text=_("The amount contributed towards the service."),
     )
-    summary = models.TextField(
+    contributor_name = models.CharField(
+        max_length=100,
         blank=True,
-        verbose_name=_("Summary"),
-        help_text=_("A brief summary of the contribution."),
+        verbose_name=_("Contributor Name"),
+        help_text=_("The name of the person contributing."),
     )
-    message = models.TextField(
+    contributor_email = models.EmailField(
         blank=True,
-        verbose_name=_("Message"),
-        help_text=_("An optional message from the contributor."),
+        verbose_name=_("Contributor Email"),
+        help_text=_("The email of the person contributing."),
     )
-    created_at = models.DateTimeField(
-        auto_now_add=True,
-        verbose_name=_("Created At"),
-        help_text=_("The date and time when the contribution was made."),
+    stripe_payment_intent_id = models.CharField(
+        max_length=255,
+        unique=True,
+        db_index=True,
+        null=True,  # Allow null for non-stripe contributions or existing rows
+        blank=True, # Allow it to be blank in forms/admin
+        verbose_name=_("Stripe Payment Intent ID"),
     )
-    fulfilled = models.BooleanField(
-        default=False,
-        verbose_name=_("Fulfilled"),
-        help_text=_("Indicates if the contribution has been fulfilled."),
+    status = models.CharField(
+        max_length=50,
+        default='succeeded',
+        verbose_name=_("Status"),
+        help_text=_("The status of the payment from Stripe."),
     )
 
     class Meta:
@@ -285,7 +283,8 @@ class Contribution(models.Model):
         verbose_name_plural = "Contributions"
     
     def __str__(self):
-        return f"{self.contributor.username} contributed {self.amount} to {self.service.name}"
+        service_name = self.service.name if self.service else "a deleted service"
+        return f"${self.amount} for {service_name} ({self.status})"
 
 
 # class VolunteerContribution(models.Model):
@@ -349,7 +348,7 @@ class DefaultService(models.Model):
     cost_per_hour = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        default=0.00,
+        default=Decimal('0.00'),
         verbose_name=_("Cost Per Hour in USD"),
         help_text=_("The cost per hour for the default service."),
     )

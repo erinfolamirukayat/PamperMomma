@@ -59,8 +59,8 @@ class ServiceViewSet(viewsets.ModelViewSet):
             Q(registry__shared_registry__shared_with=self.request.user)
         )
 
-    @action(methods=['get'], detail=False)
-    def contributions(self, request):
+    @action(methods=['get'], detail=True)
+    def contributions(self, request, pk=None):
         """
         Custom action to retrieve contributions for the service.
         This can be used to implement functionalities related to contributions.
@@ -130,7 +130,7 @@ class SharedRegistryViewSet(
 
     @extend_schema(
         methods=['get'],
-        description="Retrieve a list of services from a shared registry.",
+        description="Retrieve a single service from a shared registry.",
         responses={200: serializers.PublicServiceSerializer()}
     )
     @action(methods=['get'], detail=True, url_path='services/(?P<service_pk>[^/.]+)')
@@ -149,10 +149,10 @@ class SharedRegistryViewSet(
         return Response(serializer.data)
 
 
-class ContributionViewSet(viewsets.ModelViewSet):
+class ContributionViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    A viewset for users contributions to a registry services.
-    This can be used to implement functionalities related to contributions.
+    A read-only viewset for users to view contributions made to services
+    in registries they own. Contributions are created via the Stripe webhook.
     """
     queryset = models.Contribution.objects.all()
     serializer_class = serializers.ContributionSerializer
@@ -160,9 +160,11 @@ class ContributionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """
-        Override the default queryset to filter contributions based on the contributor.
+        Override the default queryset to filter contributions for services
+        owned by the requesting user.
         """
-        return self.queryset.filter(contributor=self.request.user)
+        user = self.request.user
+        return self.queryset.filter(service__registry__created_by=user)
 
 
 # class VolunteerContributionViewSet(viewsets.ModelViewSet):

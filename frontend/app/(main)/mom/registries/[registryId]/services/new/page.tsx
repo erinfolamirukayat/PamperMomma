@@ -18,6 +18,7 @@ function Page() {
     const router = useRouter()
     const serviceFormRef = useRef<HTMLFormElement | null>(null)
     const [services, setServices] = useState<NewService[]>([])
+    const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     // Fetch default services for suggestions
@@ -44,6 +45,7 @@ function Page() {
     // Handle form submission for adding a service
     const handleAddService = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setFormError(null); // Clear previous errors
 
         const formData = new FormData(e.currentTarget)
         const newService: NewService = {
@@ -55,27 +57,26 @@ function Page() {
         }
 
         // Validation
-        // TODO: USE A BETTER ALERT SYSTEM
         if (!newService.name.trim()) {
-            alert("Service name is required")
+            setFormError("Service name is required.");
             return
         }
         if (!newService.description.trim()) {
-            alert("Service description is required")
+            setFormError("Service description is required.");
             return
         }
         if (newService.hours <= 0) {
-            alert("Hours must be greater than 0")
+            setFormError("Hours must be greater than 0.");
             return
         }
         if (parseFloat(newService.cost_per_hour) <= 0) {
-            alert("Cost per hour must be greater than 0")
+            setFormError("Cost per hour must be greater than 0.");
             return
         }
 
         // Check for duplicate service names
         if (services.find(service => service.name.trim().toLowerCase() === newService.name.trim().toLowerCase())) {
-            alert("A service with this name already exists")
+            setFormError("A service with this name already exists.");
             return
         }
 
@@ -272,6 +273,11 @@ function Page() {
                                         defaultChecked={true}
                                     />
                                 </div>
+
+                                {/* Display Form Error */}
+                                {formError && (
+                                    <p className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg">{formError}</p>
+                                )}
 
                                 {/* Add Service Button */}
                                 <FilledButton

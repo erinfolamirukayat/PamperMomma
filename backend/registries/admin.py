@@ -6,7 +6,7 @@ from .models import (Registry, Service, SharedRegistry, Contribution, DefaultReg
 @admin.register(Registry)
 class RegistryAdmin(admin.ModelAdmin):
     list_display = ('name', 'is_first_time', 'babies_count', 'shareable_id', 'arrival_date', 'created_by', 'created_at', 'updated_at')
-    search_fields = ('name', 'shareable_id', 'created_by__username')
+    search_fields = ('name', 'shareable_id', 'created_by__email')
     list_filter = ('is_first_time', 'arrival_date', 'created_at')
 
 @admin.register(Service)
@@ -18,14 +18,14 @@ class ServiceAdmin(admin.ModelAdmin):
 @admin.register(SharedRegistry)
 class SharedRegistryAdmin(admin.ModelAdmin):
     list_display = ('registry', 'shared_with', 'created_at')
-    search_fields = ('registry__name', 'shared_with__username')
+    search_fields = ('registry__name', 'shared_with__email')
     list_filter = ('created_at',)
 
 @admin.register(Contribution)
 class ContributionAdmin(admin.ModelAdmin):
-    list_display = ('service', 'contributor', 'amount', 'created_at')
-    search_fields = ('service__name', 'contributor__username')
-    list_filter = ('created_at',)
+    list_display = ('service', 'contributor_name', 'amount', 'status', 'created_at')
+    search_fields = ('service__name', 'contributor_name', 'contributor_email', 'stripe_payment_intent_id')
+    list_filter = ('created_at', 'status')
 
 # @admin.register(VolunteerContribution)
 # class VolunteerContributionAdmin(admin.ModelAdmin):

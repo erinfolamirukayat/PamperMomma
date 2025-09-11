@@ -39,15 +39,18 @@ class ContributionSerializer(serializers.ModelSerializer):
     Serializer for the Contribution model.
     This serializer is used to convert Contribution model instances to JSON format and vice versa.
     """
-    contributor = serializers.CharField(
-        source='contributor.get_full_name',
-        read_only=True,
-        help_text="Username of the contributor making the contribution."
-    )
     class Meta:
         model = models.Contribution
         fields = '__all__'
-        read_only_fields = ('created_at', 'contributor', 'fulfilled', 'amount')
+        read_only_fields = ('created_at', 'updated_at')
+
+
+class CreatePaymentIntentSerializer(serializers.Serializer):
+    """
+    Serializer for validating the data needed to create a Stripe PaymentIntent.
+    """
+    service_id = serializers.IntegerField()
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.50, help_text="Minimum contribution is $0.50")
 
 
 # class VolunteerContributionSerializer(serializers.ModelSerializer):
@@ -245,21 +248,20 @@ class SharedRegistrySerializer(serializers.ModelSerializer):
         exclude = ('shared_with',)
         read_only_fields = ('created_at',)
     
-    # def create(self, validated_data):
-    #     """
-    #     Override the create method to handle sharing a registry with a user.
-    #     This method allows sharing a registry with another user based on the shareable ID.
-    #     """
-    #     registry_shareable_id = validated_data.pop('registry_shareable_id')
-    #     shared_with = self.context['request'].user
-    #     try:
-    #         registry = models.Registry.objects.get(shareable_id=registry_shareable_id)
-    #     except models.Registry.DoesNotExist:
-    #         raise serializers.ValidationError("Registry with the provided shareable ID does not exist.")
+    def create(self, validated_data):
+        """
+        Override the create method to handle sharing a registry with a user.
+        This method allows sharing a registry with another user based on the shareable ID.
+        """
+        registry_shareable_id = validated_data.pop('registry_shareable_id')
+        shared_with = self.context['request'].user
+        try:
+            registry = models.Registry.objects.get(shareable_id=registry_shareable_id)
+        except models.Registry.DoesNotExist:
+            raise serializers.ValidationError("Registry with the provided shareable ID does not exist.")
         
-    #     shared_registry = models.SharedRegistry.objects.get_or_create(
-    #         registry=registry,
-    #         shared_with=shared_with,
-    #         **validated_data
-    #     )
-    #     return shared_registry
+        shared_registry, created = models.SharedRegistry.objects.get_or_create(
+            registry=registry,
+            shared_with=shared_with
+        )
+        return shared_registry

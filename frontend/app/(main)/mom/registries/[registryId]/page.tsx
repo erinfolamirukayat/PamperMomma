@@ -1,6 +1,6 @@
 "use client";
 
-import { ServiceWidget } from '@/components/service';
+import { ServiceWidget } from '@/components/service/ServiceWidget';
 import { Registry } from '@/lib/services/registry/types';
 import { useParams } from 'next/navigation';
 import React, { useEffect } from 'react'
@@ -8,6 +8,7 @@ import { Icon } from '@iconify/react';
 import { FinancialSummary, RegistryHeader, RegistryOverview } from '@/components/registry';
 import { formatDate } from '@/lib/helper';
 import { useHulkFetch } from 'hulk-react-utils';
+import { useRegistryData } from '@/lib/hooks/useRegistryData';
 
 function Page() {
     const { registryId } = useParams();
@@ -20,22 +21,10 @@ function Page() {
         if (registryId) {
             goRegistries({ method: 'GET' });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [registryId])
 
-    const availableServices = registriesData?.services?.filter((service) => service.is_available && !service.is_completed) ?? [];
-    const completedServices = registriesData?.services?.filter((service) => service.is_completed) ?? [];
-
-    // Calculate total contributions and costs
-    const totalRaised = registriesData?.services?.reduce((sum, service) =>
-        sum + parseFloat(service.total_contributions || '0'), 0) ?? 0;
-    const totalCost = registriesData?.services?.reduce((sum, service) =>
-        sum + parseFloat(service.total_cost || '0'), 0) ?? 0;
-
-    const totalWithdrawn = registriesData?.services?.reduce((sum, service) =>
-        sum + parseFloat(service.total_withdrawn), 0) ?? 0;
-
-    const availableBalance = registriesData?.services?.reduce((sum, service) =>
-        sum + parseFloat(service.available_withdrawable_amount || '0'), 0) ?? 0;
+    const { availableServices, completedServices, totalRaised, totalCost, totalWithdrawn, availableBalance } = useRegistryData(registriesData);
 
     return (
         <main className='relative min-h-full flex-1'>

@@ -31,6 +31,13 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# CORS settings for development
+# This allows the frontend server at localhost:3000 to make requests to the backend.
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 # Application definition
 
@@ -293,3 +300,7 @@ FIREBASE_CRED_FILE = os.getenv("FIREBASE_CRED_FILE")
 
 # SSL settings
 # SECURE_SSL_REDIRECT = os.getenv("SECURE_SSL_REDIRECT", "False") == "True"
+
+# Stripe settings (for local development, loaded from .env)
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY')
+STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET')
