@@ -48,8 +48,8 @@ export function Menubar(props: {
             // If the logout action is successful, reset the auth state and redirect to login
             router.push('/onboarding/login');
             auth.reset();
-        }
-    }, [state]);
+        } // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state, router]);
 
     useEffect(() => {
         const alertId = 'logout-loading-modal';

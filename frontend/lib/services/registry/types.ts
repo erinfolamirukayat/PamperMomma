@@ -36,6 +36,7 @@ export interface Registry {
     shareable_id: string;
     thank_you_message: string;
     welcome_message: string;
+    owner_first_name: string;
     created_at: string;
     updated_at: string;
     services: Service[];

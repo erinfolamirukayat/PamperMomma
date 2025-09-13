@@ -2,6 +2,7 @@ export * from './ServiceCard';
 export * from './ServiceWidget';
 export * from './ContributionModal';
 export * from './ContributionStatus';
+export * from './ContributionInfoModal';
 export * from './ServiceDetailView';
 export * from './ServiceHero';
 export * from './ServiceDetailsCard';

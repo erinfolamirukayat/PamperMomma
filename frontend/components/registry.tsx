@@ -272,13 +272,12 @@ export interface RegistryWidgetProps {
 
 
 export function RegistryWidget(props: RegistryWidgetProps) {
-    // if (!props.registries || !props.sharedRegistries) {
-    //     return null;
-    // }
-    if (
-        (props.registries && props.sharedRegistries) ||
-        (!props.registries && !props.sharedRegistries)
-    ) {
+    const hasRegistries = props.registries && props.registries.length > 0;
+    const hasSharedRegistries = props.sharedRegistries && props.sharedRegistries.length > 0;
+
+    // Don't render the widget if there's nothing to show.
+    // This makes the component's behavior more intuitive.
+    if (!hasRegistries && !hasSharedRegistries) {
         return null;
     }
     return (

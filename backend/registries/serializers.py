@@ -50,7 +50,9 @@ class CreatePaymentIntentSerializer(serializers.Serializer):
     Serializer for validating the data needed to create a Stripe PaymentIntent.
     """
     service_id = serializers.IntegerField()
-    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=0.50, help_text="Minimum contribution is $0.50")
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=10.00, help_text="Minimum contribution is $10.00")
+    contributor_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
+    contributor_email = serializers.EmailField(required=False, allow_blank=True)
 
 
 # class VolunteerContributionSerializer(serializers.ModelSerializer):
@@ -223,6 +225,7 @@ class PublicRegistrySerializer(serializers.ModelSerializer):
     Serializer for the Registry model.
     """
     services = PublicServiceSerializer(many=True, required=False)
+    owner_first_name = serializers.CharField(source='created_by.first_name', read_only=True)
 
     class Meta:
         model = models.Registry

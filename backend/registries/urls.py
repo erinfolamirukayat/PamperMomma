@@ -1,4 +1,5 @@
 from rest_framework.routers import DefaultRouter
+from django.urls import path
 from .views import RegistryViewSet, ServiceViewSet, DefaultRegistryViewSet, DefaultServiceViewSet, PublicRegistryViewSet
 from .views import SharedRegistryViewSet, ContributionViewSet
 from .payment_views import PaymentViewSet

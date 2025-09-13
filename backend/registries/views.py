@@ -57,7 +57,7 @@ class ServiceViewSet(viewsets.ModelViewSet):
         return self.queryset.filter(
             Q(registry__created_by=self.request.user) |
             Q(registry__shared_registry__shared_with=self.request.user)
-        )
+        ).distinct()
 
     @action(methods=['get'], detail=True)
     def contributions(self, request, pk=None):

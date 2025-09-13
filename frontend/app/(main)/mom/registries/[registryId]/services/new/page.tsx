@@ -111,8 +111,8 @@ function Page() {
     // Handle final submission
     const handleSubmitServices = async () => {
         if (services.length === 0) {
-            alert("Please add at least one service")
-            return
+            setFormError("Please add at least one service before submitting.");
+            return;
         }
 
         setIsSubmitting(true)

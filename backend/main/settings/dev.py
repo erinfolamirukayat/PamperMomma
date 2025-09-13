@@ -33,10 +33,9 @@ ALLOWED_HOSTS = ['*']
 
 # CORS settings for development
 # This allows the frontend server at localhost:3000 to make requests to the backend.
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-]
+CORS_ALLOWED_ORIGINS_str = os.environ.get('CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://127.0.0.1:3000')
+CORS_ALLOWED_ORIGINS = CORS_ALLOWED_ORIGINS_str.split(',') if CORS_ALLOWED_ORIGINS_str else []
+
 CORS_ALLOW_CREDENTIALS = True
 
 # Application definition

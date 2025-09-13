@@ -9,6 +9,7 @@ from .models import Service, Contribution
 from .serializers import CreatePaymentIntentSerializer
 import stripe
 import logging
+import json
 
 
 logger = logging.getLogger(__name__)
@@ -32,24 +33,21 @@ class PaymentViewSet(viewsets.ViewSet):
             if not service.is_available():
                 return Response({'error': 'This service is no longer available for contributions.'}, status=status.HTTP_400_BAD_REQUEST)
 
-            # Server-side validation to prevent over-funding
             amount_to_contribute = validated_data['amount']
-            amount_remaining = service.total_cost() - service.total_contributions()
-
-            if amount_to_contribute > amount_remaining:
-                return Response({
-                    'error': f'Contribution amount of ${amount_to_contribute:.2f} exceeds the remaining amount of ${amount_remaining:.2f}.'
-                }, status=status.HTTP_400_BAD_REQUEST)
-
             amount_in_cents = int(amount_to_contribute * 100)
+
+            metadata = {
+                'service_id': str(service.id),
+                'registry_id': str(service.registry.id),
+                'amount': str(amount_to_contribute),
+                'contributor_name': validated_data.get('contributor_name', ''),
+                'contributor_email': validated_data.get('contributor_email', ''),
+            }
 
             payment_intent = stripe.PaymentIntent.create(
                 amount=amount_in_cents,
                 currency='usd',
-                metadata={
-                    'service_id': str(service.id),
-                    'registry_id': str(service.registry.id),
-                }
+                metadata=metadata
             )
             return Response({'clientSecret': payment_intent.client_secret})
         except Service.DoesNotExist:
@@ -71,44 +69,55 @@ class PaymentViewSet(viewsets.ViewSet):
         try:
             event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
         except (ValueError, stripe.error.SignatureVerificationError) as e:
+            print(f"!!! WEBHOOK SIGNATURE VERIFICATION FAILED: {e}")
             return Response(status=status.HTTP_400_BAD_REQUEST)
 
         if event['type'] == 'payment_intent.succeeded':
             payment_intent = event['data']['object']
+
             service_id = payment_intent['metadata']['service_id']
             amount_received = Decimal(payment_intent['amount_received']) / Decimal('100.0')
             
-            # Safely extract contributor details from the charge for record-keeping
-            contributor_name = ''
-            contributor_email = ''
-            charges_data = payment_intent.get('charges', {}).get('data')
-            if charges_data and len(charges_data) > 0:
-                billing_details = charges_data[0].get('billing_details', {})
-                contributor_name = billing_details.get('name', '') if billing_details else ''
-                contributor_email = billing_details.get('email', '') if billing_details else ''
+            # Prioritize details from metadata, fall back to billing details from the charge
+            contributor_name = payment_intent['metadata'].get('contributor_name')
+            contributor_email = payment_intent['metadata'].get('contributor_email')
+
+            if not contributor_name or not contributor_email:
+                charges_data = payment_intent.get('charges', {}).get('data')
+                if charges_data and len(charges_data) > 0:
+                    billing_details = charges_data[0].get('billing_details', {})
+                    if not contributor_name:
+                        contributor_name = billing_details.get('name', '') if billing_details else ''
+                    if not contributor_email:
+                        contributor_email = billing_details.get('email', '') if billing_details else ''
 
             try:
                 with transaction.atomic():
-                    service = Service.objects.get(id=service_id)
+                    # The service_id from metadata is a string, but the model's ID is an integer.
+                    # We must cast it to an int for the database lookup. This was the source of the 500 error.
+                    service = Service.objects.get(id=int(service_id))
+
+                    defaults_for_db = {
+                        'service': service,
+                        'amount': amount_received,
+                        'contributor_name': contributor_name,
+                        'contributor_email': contributor_email,
+                        'status': 'succeeded',
+                    }
+
                     contribution, created = Contribution.objects.update_or_create(
                         stripe_payment_intent_id=payment_intent['id'],
-                        defaults={
-                            'service': service,
-                            'amount': amount_received,
-                            'contributor_name': contributor_name,
-                            'contributor_email': contributor_email,
-                            'status': 'succeeded',
-                        }
+                        defaults=defaults_for_db
                     )
 
                     # If this is a new contribution, notify the registry owner.
                     if created:
-                        from notifications.models import Notification
+                        from notifications.models import UserNotification
                         message = f"{contributor_name or 'An anonymous contributor'} just contributed ${amount_received:.2f} to your '{service.name}' service!"
-                        Notification.objects.create(
+                        UserNotification.objects.create(
                             user=service.registry.created_by,
+                            title="New Contribution Received!",
                             message=message,
-                            notification_type='contribution'
                         )
             except Service.DoesNotExist:
                 # Log this error, as it indicates a problem

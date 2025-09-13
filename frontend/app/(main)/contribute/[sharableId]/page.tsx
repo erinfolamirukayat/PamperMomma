@@ -10,7 +10,7 @@ import { HulkFetchErrorProps, useHulkFetch } from 'hulk-react-utils';
 import { PublicRegistryProps, Service } from '@/lib/services/registry/types';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
-import { ContributionModal } from '@/components/service/ContributionModal';
+import { ContributionModal, ContributionInfoModal } from '@/components/service';
 import { useRegistryData } from '@/lib/hooks/useRegistryData';
 
 
@@ -23,10 +23,12 @@ function Page() {
     const { sharableId } = useParams();
     const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [error, setError] = useState<HulkFetchErrorProps | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [selectedService, setSelectedService] = useState<Service | null>(null);
     const [clientSecret, setClientSecret] = useState<string | null>(null);
     const [contributionAmount, setContributionAmount] = useState<number>(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchCallbacks = useMemo(() => ({
         onSuccess: () => setStatus('success'),
@@ -43,11 +45,14 @@ function Page() {
 
     const paymentIntentCallbacks = useMemo(() => ({
         onSuccess: (data) => {
+            setIsSubmitting(false);
+            setIsInfoModalOpen(false);
             setClientSecret(data.clientSecret);
-            setIsModalOpen(true);
+            setIsPaymentModalOpen(true);
         },
         onError: (e) => {
             console.error("Failed to create payment intent:", e);
+            setIsSubmitting(false);
         }
     }), []);
 
@@ -61,14 +66,25 @@ function Page() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [sharableId]);
 
-    const handleInitiateContribution = useCallback((service: Service, amount: number) => {
+    const handleOpenContributionModal = useCallback((service: Service) => {
         setSelectedService(service);
+        setIsInfoModalOpen(true);
+    }, []);
+
+    const handleInitiatePayment = useCallback((amount: number, name: string, email: string) => {
+        if (!selectedService) return;
+        setIsSubmitting(true);
         setContributionAmount(amount);
         createPaymentIntent({
             method: 'POST',
-            body: JSON.stringify({ service_id: service.id, amount })
+            body: JSON.stringify({
+                service_id: selectedService.id,
+                amount,
+                contributor_name: name,
+                contributor_email: email,
+            })
         });
-    }, [createPaymentIntent]);
+    }, [createPaymentIntent, selectedService]);
 
     const { availableServices, completedServices, totalRaised, totalCost } = useRegistryData(registriesData);
 
@@ -90,7 +106,17 @@ function Page() {
 
     return (
         <main className='relative min-h-full flex-1'>
-            {isModalOpen && clientSecret && selectedService && stripePromise && (
+            {isInfoModalOpen && selectedService && registriesData && (
+                <ContributionInfoModal
+                    service={selectedService}
+                    registryOwnerName={registriesData.owner_first_name}
+                    onClose={() => setIsInfoModalOpen(false)}
+                    onSubmit={handleInitiatePayment}
+                    isSubmitting={isSubmitting}
+                />
+            )}
+
+            {isPaymentModalOpen && clientSecret && selectedService && stripePromise && (
                 <Elements stripe={stripePromise} options={{ clientSecret }}>
                     <ContributionModal
                         sharableId={sharableId as string}
@@ -99,7 +125,7 @@ function Page() {
                         clientSecret={clientSecret}
                         amount={contributionAmount}
                         onClose={() => {
-                            setIsModalOpen(false);
+                            setIsPaymentModalOpen(false);
                             setClientSecret(null);
                             setSelectedService(null);
                             setContributionAmount(0);
@@ -133,24 +159,13 @@ function Page() {
             {/* Services Sections */}
             <section className='px-6 sm:px-12 pb-12'>
                 <div className='max-w-6xl mx-auto space-y-12'>
-                    {/* Available Services */}
-                    {availableServices.length > 0 && (
+                    {registriesData?.services && registriesData.services.length > 0 && (
                         <ServiceWidget
-                            title='Available Services'
-                            description='Help support these services for the new mom'
-                            services={availableServices}
+                            title='Registry Services'
+                            description='Contribute to any of the services below to support the new mom.'
+                            services={registriesData.services}
                             context='public'
-                            onContribute={handleInitiateContribution}
-                        />
-                    )}
-
-                    {/* Completed Services */}
-                    {completedServices.length > 0 && (
-                        <ServiceWidget
-                            title='Completed Services'
-                            description='These services have been fully funded!'
-                            services={completedServices}
-                            context='public'
+                            onContribute={handleOpenContributionModal}
                         />
                     )}
 

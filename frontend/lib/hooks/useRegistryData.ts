@@ -5,7 +5,7 @@ export function useRegistryData(registry?: Registry | null) {
     return useMemo(() => {
         const services = registry?.services ?? [];
 
-        const availableServices = services.filter((service: Service) => service.is_available && !service.is_completed);
+        const availableServices = services.filter((service: Service) => service.is_available);
         const completedServices = services.filter((service: Service) => service.is_completed);
 
         const totalRaised = services.reduce((sum, service) => sum + parseFloat(service.total_contributions || '0'), 0);
