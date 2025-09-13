@@ -6,7 +6,7 @@ interface ServiceWidgetProps {
     description: string;
     services: Service[];
     context: 'public' | 'owner' | 'mom' | 'shared';
-    onContribute?: (service: Service, amount: number) => void;
+    onContribute?: (service: Service) => void;
 }
 
 export function ServiceWidget({ title, description, services, context, onContribute }: ServiceWidgetProps) {
