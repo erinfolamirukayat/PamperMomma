@@ -50,12 +50,18 @@ function PageClient({ accessToken }: PageClientProps) {
                 // Refetch registry data to update the UI
                 goRegistries({ method: 'GET' });
             } else {
-                const errorData: HulkFetchErrorProps = { message: "Failed to delete service", details: [await response.text()] };
+                const errorData: HulkFetchErrorProps = { message: "Failed to delete service", details: [await response.text()], code: response.status };
                 console.error(errorData.message, errorData.details);
-                alert.push(<ErrorModal error={errorData} />);
+                alert.push(<ErrorModal error={errorData} />, {
+                    alertId: `delete-service-error-${serviceId}`
+                });
             }
         } catch (error) {
-            alert.push(<ErrorModal error={{ message: "An error occurred while deleting the service.", details: [(error as Error).message] }} />);
+            const errorData: HulkFetchErrorProps = { message: "An error occurred while deleting the service.", details: [(error as Error).message], code: 500 };
+            console.error(errorData.message, errorData.details);
+            alert.push(<ErrorModal error={errorData} />, {
+                alertId: `delete-service-catch-error-${serviceId}`
+            });
         }
     };
 
