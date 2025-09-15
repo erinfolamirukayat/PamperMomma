@@ -36,7 +36,7 @@ export function Menubar(props: {
         goShared({ method: 'GET' });
     }, []);
 
-    const onRegistrySwitch = (e: any) => {
+    const onRegistrySwitch = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value
         if (value === "") return;
         router.push(`/mom/registries/${value}`)
