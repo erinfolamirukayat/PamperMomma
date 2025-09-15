@@ -47,14 +47,17 @@ function Page() {
         fetchDefaultServices({ method: 'GET' });
     }, [])
 
-    // Handle registry name changes with suggestions
-    const handleRegistryNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // Update registry name in state
+    // Generic handler for registry form field changes
+    const handleRegistryChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        const isCheckbox = type === 'checkbox';
+        const checkedValue = isCheckbox ? (e.target as HTMLInputElement).checked : null;
+
         setRegistry(prev => ({
             ...prev,
-            name: e.target.value,
-        }))
-    }
+            [name]: isCheckbox ? checkedValue : value,
+        }));
+    };
 
     // Handle service form submission
     const handleAddService = (e: React.FormEvent<HTMLFormElement>) => {
@@ -143,20 +146,15 @@ function Page() {
             return
         }
 
-        const formData = new FormData(e.currentTarget)
-        const registryData = {
-            ...registry,
-            arrival_date: formData.get("arrival_date")?.toString(),
-            babies_count: parseInt(formData.get("babies_count")?.toString() ?? "1"),
-            is_first_time: formData.get("first_time") === "on",
-            welcome_message: formData.get("welcome_message")?.toString() ?? "",
-            thank_you_message: formData.get("thank_you_message")?.toString() ?? ""
+        if (!registry.arrival_date) {
+            setFormError("Expected arrival date is required.");
+            return;
         }
 
         // Submit the registry data
         await goRegistries({
             method: 'POST',
-            body: JSON.stringify(registryData),
+            body: JSON.stringify(registry),
         })
     }
 
@@ -214,10 +212,10 @@ function Page() {
                         <div className='grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl'>
                             <InputField
                                 labeltext="Registry Name *"
-                                name="registryName"
+                                name="name"
                                 placeholder="e.g., John's Pamper Registry"
                                 value={registry.name}
-                                onChange={handleRegistryNameChange}
+                                onChange={handleRegistryChange}
                                 list="registry-suggestions"
                                 autoComplete="off"
                                 required
@@ -227,21 +225,26 @@ function Page() {
                                 name='arrival_date'
                                 labeltext='Expected Arrival Date *'
                                 type='date'
+                                value={registry.arrival_date}
+                                onChange={handleRegistryChange}
                                 required
                             />
                             <InputField
                                 name='babies_count'
                                 labeltext='Number of Babies *'
                                 type='number'
-                                min={1}
-                                max={10}
-                                defaultValue={1}
+                                min="1"
+                                max="10"
+                                value={registry.babies_count}
+                                onChange={handleRegistryChange}
                                 required
                             />
                             <CheckboxField
-                                id='first_time'
-                                name='first_time'
+                                id='is_first_time'
+                                name='is_first_time'
                                 labeltext="I'm a first-time parent"
+                                checked={registry.is_first_time}
+                                onChange={handleRegistryChange}
                             />
                             {/* Welcome message */}
                             <TextAreaField
@@ -250,6 +253,8 @@ function Page() {
                                 placeholder='This is shown to everyone who visit your pamper registry.'
                                 rows={3}
                                 className='col-span-2'
+                                value={registry.welcome_message}
+                                onChange={handleRegistryChange}
                             />
                             {/* Thank you message */}
                             <TextAreaField
@@ -258,6 +263,8 @@ function Page() {
                                 placeholder='This is shown to everyone who contributes to your pamper registry.'
                                 rows={3}
                                 className='col-span-2'
+                                value={registry.thank_you_message}
+                                onChange={handleRegistryChange}
                             />
                         </div>
                     </form>

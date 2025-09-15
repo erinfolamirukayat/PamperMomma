@@ -102,6 +102,19 @@ const faqData: FAQItem[] = [
         answer: "Contributors can see the total amount raised and progress toward the goal, but individual contribution amounts and contributor names are kept private unless the contributor chooses to leave a public message."
     },
     {
+        category: "Contributions",
+        question: "How do I receive the funds contributed to my registry?",
+        answer: `<p>Getting your funds is a simple and secure process, powered by our trusted payment partner, Stripe. We've chosen Stripe, a global leader in online payments used by millions of businesses, to ensure your financial information is handled with the highest level of security and privacy.</p>
+        <p class="font-bold mt-4">Here's how it works:</p>
+        <ol class="list-decimal list-inside space-y-2 mt-2">
+            <li><strong>One-Time Payout Setup:</strong> Before your first withdrawal, you'll find a "Set Up Payouts" button in your dashboard. Clicking this will take you to a secure onboarding form hosted directly by Stripe.</li>
+            <li><strong>Secure Information Collection:</strong> You will provide your personal and bank account details directly to Stripe on their secure form. <strong>PamperMomma's servers never see, handle, or store this sensitive data.</strong> Stripe uses this information to verify your identity and securely link your bank account for transfers, in compliance with global financial regulations.</li>
+            <li><strong>Withdrawing Your Funds:</strong> Once your payout account is set up, you can withdraw your available balance at any time from your registry dashboard. When you initiate a withdrawal, Stripe securely processes the transfer, and the funds will typically arrive in your bank account within a few business days.</li>
+        </ol>
+        <p class="mt-4">By using Stripe Connect, you can be confident that your transactions are safe and your privacy is protected, allowing you to focus on what matters most—preparing for your new baby.</p>
+        `
+    },
+    {
         category: "Account",
         question: "How do I update my account information?",
         answer: "Go to Settings from your account menu to update your personal information, change your password, and manage your notification preferences."
@@ -171,7 +184,7 @@ function FAQAccordion({ item }: FAQAccordionProps) {
             </button>
             {isOpen && (
                 <div className="px-6 pb-4">
-                    <p className="text-body-desktop text-neutral-700 leading-relaxed">{item.answer}</p>
+                    <div className="prose max-w-none text-body-desktop text-neutral-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: item.answer }} />
                 </div>
             )}
         </div>

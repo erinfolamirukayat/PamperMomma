@@ -44,10 +44,12 @@ export function Menubar(props: {
     }
 
     useEffect(() => {
-        if (state?.status === 'success') {
+        // Check for success status AND if the user is still marked as authenticated
+        // to prevent an infinite loop caused by `auth.reset()` re-triggering the effect.
+        if (state?.status === 'success' && auth.isAuthenticated()) {
             // If the logout action is successful, reset the auth state and redirect to login
-            router.push('/onboarding/login');
             auth.reset();
+            router.push('/onboarding/login');
         }
     }, [state, router, auth]);
 

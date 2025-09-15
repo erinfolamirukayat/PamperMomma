@@ -48,15 +48,19 @@ from rest_framework import permissions
 
 urlpatterns = [
     path("", RedirectView.as_view(url=reverse_lazy("docs"))),
-    path("accounts/", include('accounts.urls'), name="accounts"),
-    path("api-auth/", include('api_auth.urls'), name="api-auth"),
-    path("auth/", include('rest_framework.urls'), name="auth"),
-    # path('docs/', schema_view.with_ui('swagger', cache_timeout=0), name='docs'),
+
+    # Admin site
+    path('admin/', admin.site.urls),
+
+    path("accounts/", include('accounts.urls')),
+    path("api-auth/", include('api_auth.urls')),
+    path("auth/", include('rest_framework.urls')),
+    path("registries/", include('registries.urls')),
+    path("notifications/", include('notifications.urls')),
+
+    # API Schema and Documentation
     path('schema/', SpectacularAPIView.as_view(), name='schema'),
     path('docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='docs'),
-    path('admin/', admin.site.urls),
-    path("registries/", include('registries.urls'), name="registries"),
-    path("notifications/", include('notifications.urls'), name="notifications"),
 ]
 
 if settings.DEBUG:
