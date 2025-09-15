@@ -1,8 +1,8 @@
 from rest_framework.routers import DefaultRouter
-from django.urls import path
+from django.urls import include, path
 from .views import RegistryViewSet, ServiceViewSet, DefaultRegistryViewSet, DefaultServiceViewSet, PublicRegistryViewSet
 from .views import SharedRegistryViewSet, ContributionViewSet
-from .payment_views import PaymentViewSet
+from .payment_views import PaymentViewSet, stripe_webhook
 # VolunteerContributionViewSet
 
 
@@ -18,4 +18,7 @@ router.register(r'public', PublicRegistryViewSet, basename='public-registry')
 # router.register(r'u/volunteers', VolunteerContributionViewSet, basename='volunteer-contribution')
 
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("", include(router.urls)),
+    path("payments/stripe-webhook/", stripe_webhook, name="stripe-webhook"),
+]
