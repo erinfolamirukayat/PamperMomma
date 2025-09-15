@@ -1,7 +1,6 @@
-from rest_framework import viewsets
+from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework import permissions
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
@@ -58,6 +57,56 @@ class ServiceViewSet(viewsets.ModelViewSet):
             Q(registry__created_by=self.request.user) |
             Q(registry__shared_registry__shared_with=self.request.user)
         ).distinct()
+
+    def create(self, request, *args, **kwargs):
+        """
+        Override create to support creating multiple services at once.
+        """
+        is_many = isinstance(request.data, list)
+        if not is_many:
+            # If not a list, fall back to default single-object creation
+            return super().create(request, *args, **kwargs)
+
+        # Get registry from query parameters
+        registry_id = request.query_params.get('registry')
+        if not registry_id:
+            return Response({"detail": "Registry ID is required as a query parameter."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify that the registry exists and belongs to the user
+        try:
+            registry = models.Registry.objects.get(id=registry_id, created_by=request.user)
+        except models.Registry.DoesNotExist:
+            return Response({"detail": "Registry not found or you do not have permission."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Use the serializer with many=True
+        serializer = self.get_serializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        # Add the registry to each service and perform a bulk create
+        services_to_create = [models.Service(registry=registry, **item) for item in serializer.validated_data]
+        created_services = models.Service.objects.bulk_create(services_to_create)
+
+        # Re-serialize the created instances to include read-only fields and method fields
+        output_serializer = self.get_serializer(instance=created_services, many=True)
+        return Response(output_serializer.data, status=status.HTTP_201_CREATED)
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Custom destroy method to ensure only the owner of a registry can delete
+        a service, and only if it has no contributions.
+        """
+        service = self.get_object()
+
+        # Check if the user is the owner of the registry
+        if service.registry.created_by != request.user:
+            return Response({"detail": "You do not have permission to delete this service."}, status=status.HTTP_403_FORBIDDEN)
+
+        # Check if the service has any contributions
+        if service.contributions.exists():
+            return Response({"detail": "Cannot delete a service that has contributions."}, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_destroy(service)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(methods=['get'], detail=True)
     def contributions(self, request, pk=None):

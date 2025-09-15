@@ -8,7 +8,7 @@ import { useServiceDetails } from '@/lib/hooks/useServiceDetails';
 function Page() {
     const { serviceId } = useParams()
     const [showContributeForm, setShowContributeForm] = useState(false)
-    const { serviceData, completionPercentage } = useServiceDetails(serviceId);
+    const { serviceData } = useServiceDetails(serviceId);
 
     if (!serviceData) return null;
 
@@ -16,7 +16,6 @@ function Page() {
         serviceData={serviceData}
         showContributeForm={showContributeForm}
         setShowContributeForm={setShowContributeForm}
-        completionPercentage={completionPercentage}
         context='shared'
     />
 }

@@ -35,6 +35,8 @@ function Page() {
         welcome_message: ""
     })
 
+    const [formError, setFormError] = useState<string | null>(null);
+
     // Fetch default services for suggestions
     const {
         dispatch: fetchDefaultServices,
@@ -57,6 +59,7 @@ function Page() {
     // Handle service form submission
     const handleAddService = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setFormError(null); // Clear previous errors
 
         const formData = new FormData(e.currentTarget)
         const newService: DefaultService = {
@@ -67,22 +70,20 @@ function Page() {
             is_active: formData.get("is_active") === "on"
         }
 
-        // Validation
-        // TODO: USE A BETTER ALERT SYSTEM
         if (!newService.name.trim()) {
-            alert("Service name is required")
+            setFormError("Service name is required.");
             return
         }
         if (!newService.description.trim()) {
-            alert("Service description is required")
+            setFormError("Service description is required.");
             return
         }
         if (newService.hours <= 0) {
-            alert("Hours must be greater than 0")
+            setFormError("Hours must be greater than 0.");
             return
         }
         if (parseFloat(newService.cost_per_hour) <= 0) {
-            alert("Cost per hour must be greater than 0")
+            setFormError("Cost per hour must be greater than 0.");
             return
         }
 
@@ -90,7 +91,7 @@ function Page() {
         if (registry.services?.find(service =>
             service.name.trim().toLowerCase() === newService.name.trim().toLowerCase()
         )) {
-            alert("A service with this name already exists")
+            setFormError("A service with this name already exists.");
             return
         }
 
@@ -131,13 +132,14 @@ function Page() {
     // Handle final registry creation/update
     const handleCreateRegistry = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        setFormError(null);
         if (!registry.name.trim()) {
-            alert("Registry name is required")
+            setFormError("Registry name is required.");
             return
         }
 
         if ((registry.services?.length ?? 0) === 0) {
-            alert("Registry must have at least one service")
+            setFormError("Registry must have at least one service.");
             return
         }
 
@@ -284,6 +286,7 @@ function Page() {
                                 <div className='space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar'>
                                     {registry.services?.map((service, index) => (
                                         <ServiceListCard
+                                            key={service.name}
                                             serviceName={service.name}
                                             description={service.description}
                                             totalHours={service.hours}
@@ -357,6 +360,11 @@ function Page() {
                                         defaultChecked={true}
                                     />
                                 </div>
+
+                                {/* Display Form Error */}
+                                {formError && (
+                                    <p className="text-red-500 text-sm text-center bg-red-50 p-3 rounded-lg">{formError}</p>
+                                )}
 
                                 {/* Add Service Button */}
                                 <FilledButton
@@ -440,7 +448,11 @@ function Page() {
                             actions={
                                 <div className='flex flex-col gap-3'>
                                     <FilledButton
-                                        onClick={() => setRegistry(prev => ({ ...prev, services: [] }))}
+                                        onClick={() => {
+                                            if (window.confirm("Are you sure you want to clear all added services? This action cannot be undone.")) {
+                                                setRegistry(prev => ({ ...prev, services: [] }));
+                                            }
+                                        }}
                                         className='flex items-center gap-2'
                                     >
                                         <Icon icon="material-symbols-light:delete" className="h-5 w-5" />

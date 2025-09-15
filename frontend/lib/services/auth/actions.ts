@@ -1,5 +1,5 @@
 'use server';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { ActionStateType } from './types';
 import { parseErrorText } from '../../helper';
 
@@ -34,8 +34,8 @@ export const login = async (prevState: any, formData: FormData | null): Promise<
 
         const data = await response.json();
         // cookieStore.set('access_token', data.access_token);
-        cookieStore.set('refresh_token', data.refresh);
-
+        cookieStore.set('refresh_token', data.refresh, { httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/' });
+        cookieStore.set('access_token', data.access, { httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/' });
         return {
             status: 'success',
             data: data.access,
@@ -91,6 +91,7 @@ export const retrieveAccessToken = async (): Promise<ActionStateType<string>> =>
         }
 
         const data = await response.json();
+        cookieStore.set('access_token', data.access, { httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/' });
         console.log('Access token retrieved:', data.access);
         return {
             status: 'success',
@@ -103,19 +104,19 @@ export const retrieveAccessToken = async (): Promise<ActionStateType<string>> =>
             error: {
                 message: 'Error retrieving access token',
                 code: 500,
-                details: ['An unexpected error occurred'],
+                details: ['An unexpected error occurred']
             }
         };
     }
 }
 
-
-export const logout = async (prevState?: any, formData?: FormData | null): Promise<ActionStateType<void>> => {
+export const logout = async (prevState: any, formData: FormData | null): Promise<ActionStateType<void>> => {
     const cookieStore = await cookies();
     console.log('Logging out...');
     cookieStore.delete('refresh_token');
+    cookieStore.delete('access_token');
     return {
         status: 'success',
-        data: undefined,
+        data: undefined
     };
-}
+};

@@ -197,6 +197,7 @@ function Page() {
                                 <div className='space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar'>
                                     {services.map((service, index) => (
                                         <ServiceListCard
+                                            key={service.name}
                                             serviceName={service.name}
                                             description={service.description}
                                             totalHours={service.hours}
@@ -305,7 +306,11 @@ function Page() {
                                 </div>
                                 <div className='flex gap-3'>
                                     <button
-                                        onClick={() => setServices([])}
+                                        onClick={() => {
+                                            if (window.confirm("Are you sure you want to clear all added services? This action cannot be undone.")) {
+                                                setServices([])
+                                            }
+                                        }}
                                         className='px-4 py-2 text-neutral-600 hover:text-neutral-800 transition-colors text-label-desktop'
                                         disabled={isSubmitting}
                                     >

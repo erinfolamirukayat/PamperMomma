@@ -41,7 +41,7 @@ function Page() {
     const {
         dispatch: goRegistries,
         data: registriesData
-    } = useHulkFetch<PublicRegistryProps>(`/registries/public/${sharableId}/`, fetchCallbacks);
+    } = useHulkFetch<PublicRegistryProps>(sharableId ? `/registries/public/${sharableId}/` : null, fetchCallbacks);
 
     const paymentIntentCallbacks = useMemo(() => ({
         onSuccess: (data) => {

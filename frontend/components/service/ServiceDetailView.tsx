@@ -7,7 +7,6 @@ interface ServiceDetailViewProps {
     serviceData: Service;
     showContributeForm: boolean;
     setShowContributeForm: (show: boolean) => void;
-    completionPercentage: string;
     context: 'owner' | 'shared';
 }
 
@@ -15,7 +14,6 @@ export function ServiceDetailView({
     serviceData,
     showContributeForm,
     setShowContributeForm,
-    completionPercentage,
     context
 }: ServiceDetailViewProps) {
     return (
@@ -24,7 +22,7 @@ export function ServiceDetailView({
             <ServiceHero
                 service={serviceData}
                 setShowContributeForm={setShowContributeForm}
-                completionPercentage={completionPercentage}
+                context={context}
             />
 
             {/* Main Content */}

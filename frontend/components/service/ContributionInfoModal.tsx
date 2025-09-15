@@ -18,10 +18,6 @@ export function ContributionInfoModal({ service, registryOwnerName, onClose, onS
     const [email, setEmail] = useState('');
     const [error, setError] = useState('');
 
-    const totalCost = parseFloat(service.total_cost || '0');
-    const totalContributions = parseFloat(service.total_contributions || '0');
-    const amountRemaining = totalCost - totalContributions;
-
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const contributionAmount = parseFloat(amount);

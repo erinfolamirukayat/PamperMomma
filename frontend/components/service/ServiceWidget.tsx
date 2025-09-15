@@ -1,5 +1,5 @@
 import { Service } from "@/lib/services/registry/types";
-import { ServiceCard } from "./ServiceCard";
+import { ServiceCard } from "@/components/service/ServiceCard";
 
 interface ServiceWidgetProps {
     title: string;
@@ -7,9 +7,10 @@ interface ServiceWidgetProps {
     services: Service[];
     context: 'public' | 'owner' | 'mom' | 'shared';
     onContribute?: (service: Service) => void;
+    onDelete?: (serviceId: number) => void;
 }
 
-export function ServiceWidget({ title, description, services, context, onContribute }: ServiceWidgetProps) {
+export function ServiceWidget({ title, description, services, context, onContribute, onDelete }: ServiceWidgetProps) {
     return (
         <div>
             <h3 className="text-title-desktop font-bold text-neutral-800 mb-2">{title}</h3>
@@ -21,6 +22,7 @@ export function ServiceWidget({ title, description, services, context, onContrib
                         service={service}
                         context={context}
                         onContribute={onContribute}
+                        onDelete={onDelete}
                     />
                 ))}
             </div>
