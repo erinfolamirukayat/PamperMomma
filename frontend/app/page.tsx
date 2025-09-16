@@ -3,8 +3,13 @@ import { FilledButton, OutlinedButton } from "@/components/buttons";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { AppLogo } from "@/components/logo";
+import { cookies } from "next/headers";
 
-export default function Home() {
+
+export default async function Home() {
+  const cookieStore = await cookies();
+  const isAuthenticated = cookieStore.has('access_token');
+
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-neutral-100 to-primary-100">
       {/* Navigation */}
@@ -47,10 +52,16 @@ export default function Home() {
               <a href="#about" className="text-neutral-700 hover:text-primary-600 transition-colors">About</a>
             </div>
 
-            <div className="flex flex-col lg:flex-row gap-4">
-              <Link href="/onboarding/login" className="border border-primary-500 text-primary-500 rounded-full px-6 py-4 hover:bg-primary-100 transition-colors">Sign In</Link>
-              <Link href="/onboarding" className="bg-primary-500 text-neutral-100 rounded-full px-6 py-4 hover:bg-primary-600 transition-colors">Get Started</Link>
-            </div>
+            {isAuthenticated ? (
+              <div className="flex flex-col lg:flex-row gap-4">
+                <Link href="/mom/registries" className="bg-primary-500 text-neutral-100 rounded-full px-6 py-4 hover:bg-primary-600 transition-colors">Go to Dashboard</Link>
+              </div>
+            ) : (
+              <div className="flex flex-col lg:flex-row gap-4">
+                <Link href="/onboarding/login" className="border border-primary-500 text-primary-500 rounded-full px-6 py-4 hover:bg-primary-100 transition-colors">Sign In</Link>
+                <Link href="/onboarding" className="bg-primary-500 text-neutral-100 rounded-full px-6 py-4 hover:bg-primary-600 transition-colors">Get Started</Link>
+              </div>
+            )}
           </div>
           {/* Mobile Menu Button */}
           <div className="lg:hidden">

@@ -1,4 +1,5 @@
 import { Icon } from "@iconify/react";
+import Link from 'next/link';
 import { SelectField } from "./inputs";
 import { LinkListTile } from "./tiles";
 import { useParams, useRouter } from "next/navigation";
@@ -74,7 +75,12 @@ export function Menubar(props: {
         <aside className={clx('bg-primary-500 overflow-y-auto', props.className)}>
             <div className='h-32 text-primary-100 flex flex-col justify-between px-4 py-4'>
                 <div className='flex justify-between items-center'>
-                    <div className='text-title-desktop'>PamperMomma</div>
+                    <Link href="/" className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                        <Icon icon="material-symbols:favorite" className="text-primary-500 text-lg" />
+                    </div>
+                    <span className="text-2xl font-bold text-white">PamperMomma</span>
+                </Link>
                     <button className="menu-close-btn" onClick={props.onClose}>
                         <Icon icon="material-symbols-light:close" className='h-8 w-8 cursor-pointer' />
                     </button>
