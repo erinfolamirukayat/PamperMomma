@@ -111,7 +111,7 @@ const faqData: FAQItem[] = [
             <li><strong>Secure Information Collection:</strong> You will provide your personal and bank account details directly to Stripe on their secure form. <strong>PamperMomma's servers never see, handle, or store this sensitive data.</strong> Stripe uses this information to verify your identity and securely link your bank account for transfers, in compliance with global financial regulations.</li>
             <li><strong>Withdrawing Your Funds:</strong> Once your payout account is set up, you can withdraw your available balance at any time from your registry dashboard. When you initiate a withdrawal, Stripe securely processes the transfer, and the funds will typically arrive in your bank account within a few business days.</li>
         </ol>
-        <p class="mt-4">By using Stripe Connect, you can be confident that your transactions are safe and your privacy is protected, allowing you to focus on what matters most—preparing for your new baby.</p>
+        <p class="mt-4">By using Stripe, you can be confident that your transactions are safe and your privacy is protected, allowing you to focus on what matters most—preparing for your new baby.</p>
         `
     },
     {
