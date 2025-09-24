@@ -4,6 +4,7 @@ import React from 'react'
 import { Metadata, ResolvingMetadata } from 'next';
 import { PublicRegistryProps } from '@/lib/services/registry/types';
 
+export const dynamic = 'force-dynamic';
 export async function generateMetadata(
     { params }: {
         params: { sharableId: string }
