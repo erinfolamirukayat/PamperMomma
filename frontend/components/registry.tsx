@@ -112,7 +112,14 @@ export function RegistryOverview(props: RegistryOverviewProps) {
 export interface FinancialSummaryProps {
     total_contribution: string,
     total_withdrawn: string,
-    available_balance: string,
+    total_fees: string,
+    stripe_balance: {
+        available: string;
+        pending: string;
+    };
+    payouts_enabled: boolean;
+    onSetupPayoutsClick: () => void; // Kept for onboarding flow
+    onWithdrawClick: () => void;
 }
 
 
@@ -122,19 +129,45 @@ export function FinancialSummary(props: FinancialSummaryProps) {
             <div className='max-w-6xl mx-auto'>
                 <div className='bg-gradient-to-r from-green-100 to-orange-100 rounded-2xl p-6'>
                     <h3 className='text-title-desktop text-neutral-900 mb-4'>Financial Summary</h3>
-                    <div className='grid grid-cols-2 sm:grid-cols-3 gap-4'>
+                    <div className='grid grid-cols-2 sm:grid-cols-4 gap-4'>
                         <div className='text-center'>
-                            <p className='text-label-desktop text-neutral-600'>Total Contributions</p>
-                            <p className='text-title-desktop-large text-green-600'>${props.total_contribution}</p>
+                            <p className='text-label-desktop text-neutral-600'>Stripe Fees</p>
+                            <p className='text-title-desktop-large text-red-600'>-${props.total_fees}</p>
                         </div>
                         <div className='text-center'>
                             <p className='text-label-desktop text-neutral-600'>Total Withdrawn</p>
-                            <p className='text-title-desktop-large text-orange-600'>${props.total_withdrawn}</p>
+                            <p className='text-title-desktop-large text-neutral-500'>${props.total_withdrawn}</p>
                         </div>
                         <div className='text-center'>
-                            <p className='text-label-desktop text-neutral-600'>Available Balance</p>
-                            <p className='text-title-desktop-large text-primary-600'>${props.available_balance}</p>
+                            <p className='text-label-desktop text-neutral-600'>Pending Funds</p>
+                            <p className='text-title-desktop-large text-orange-600'>${parseFloat(props.stripe_balance.pending || '0').toFixed(2)}</p>
                         </div>
+                        <div className='text-center'>
+                            <p className='text-label-desktop text-neutral-600'>Available for Withdrawal</p>
+                            <p className='text-title-desktop-large text-primary-600'>${parseFloat(props.stripe_balance.available || '0').toFixed(2)}</p>
+                        </div>
+                    </div>
+                    <div className="text-center mt-4 text-body-small text-neutral-600">
+                        <p>
+                            Note: Contributions enter a 'Pending' state for a few business days before they become 'Available for Withdrawal'. 
+                            This is a standard banking process to ensure funds are secure.
+                        </p>
+                    </div>
+                    <div className="mt-6 text-center">
+                        {props.payouts_enabled ? (
+                            parseFloat(props.stripe_balance.available || '0') > 0 && (
+                                <button onClick={props.onWithdrawClick} className="bg-green-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+                                    Withdraw Funds
+                                </button>
+                            )
+                        ) : (
+                            <div className="bg-primary-100 p-4 rounded-lg border border-primary-200">
+                                <p className="text-body-desktop text-neutral-700 mb-3">To withdraw funds, you need to set up your payout account with Stripe.</p>
+                                <button onClick={props.onSetupPayoutsClick} className="bg-blue-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+                                    Set Up Payouts
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

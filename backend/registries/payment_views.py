@@ -11,6 +11,7 @@ from .serializers import CreatePaymentIntentSerializer
 import stripe
 import logging
 import json
+from datetime import datetime, timezone
 
 
 logger = logging.getLogger(__name__)
@@ -67,65 +68,69 @@ def stripe_webhook(request):
     Handles incoming webhooks from Stripe to confirm payments.
     This is a standalone view to easily apply @csrf_exempt.
     """
+    print("\n--- [WEBHOOK] Received a request from Stripe CLI ---")
     payload = request.body
     sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
     endpoint_secret = settings.STRIPE_WEBHOOK_SECRET
 
     try:
         event = stripe.Webhook.construct_event(payload, sig_header, endpoint_secret)
+        print(f"[WEBHOOK] Event constructed successfully. Type: {event.type}")
     except (ValueError, stripe.error.SignatureVerificationError) as e:
         print(f"!!! WEBHOOK SIGNATURE VERIFICATION FAILED: {e}")
+        logger.error(f"Webhook signature verification failed: {e}", exc_info=True)
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    if event['type'] == 'payment_intent.succeeded':
+    if event.type == 'charge.succeeded':
+        # We now handle everything in the retrieve method to avoid race conditions.
+        # This handler can be used in the future for other charge-related events.
+        pass
+
+    if event.type == 'payment_intent.succeeded':
+        print("\n--- [WEBHOOK] Handling 'payment_intent.succeeded' to create initial contribution record ---")
         payment_intent = event['data']['object']
+        payment_intent_id = payment_intent.get('id')
+        print(f"[WEBHOOK] PI ID: {payment_intent_id}")
 
-        service_id = payment_intent['metadata']['service_id']
-        amount_received = Decimal(payment_intent['amount_received']) / Decimal('100.0')
+        metadata = payment_intent.get('metadata', {})
+        service_id = metadata.get('service_id')
         
-        # Prioritize details from metadata, fall back to billing details from the charge
-        contributor_name = payment_intent['metadata'].get('contributor_name')
-        contributor_email = payment_intent['metadata'].get('contributor_email')
-
-        if not contributor_name or not contributor_email:
-            charges_data = payment_intent.get('charges', {}).get('data')
-            if charges_data and len(charges_data) > 0:
-                billing_details = charges_data[0].get('billing_details', {})
-                if not contributor_name:
-                    contributor_name = billing_details.get('name', '') if billing_details else ''
-                if not contributor_email:
-                    contributor_email = billing_details.get('email', '') if billing_details else ''
+        if not service_id:
+            logger.warning(f"Webhook 'payment_intent.succeeded' for PI {payment_intent_id} is missing 'service_id' in metadata. Skipping.")
+            return Response(status=status.HTTP_200_OK)
 
         try:
             with transaction.atomic():
                 service = Service.objects.get(id=int(service_id))
-
+                
+                # Create the initial contribution record. Fee and available_on will be updated later.
                 defaults_for_db = {
                     'service': service,
-                    'amount': amount_received,
-                    'contributor_name': contributor_name,
-                    'contributor_email': contributor_email,
+                    'amount': Decimal(payment_intent.get('amount_received', 0)) / Decimal('100.0'),
+                    'contributor_name': metadata.get('contributor_name', ''),
+                    'contributor_email': metadata.get('contributor_email', ''),
                     'status': 'succeeded',
                 }
 
                 contribution, created = Contribution.objects.update_or_create(
-                    stripe_payment_intent_id=payment_intent['id'],
+                    stripe_payment_intent_id=payment_intent_id,
                     defaults=defaults_for_db
                 )
+                print(f"[WEBHOOK] Initial contribution record {'created' if created else 'updated'}: ID {contribution.id}")
 
                 if created:
                     from notifications.models import UserNotification
-                    message = f"{contributor_name or 'An anonymous contributor'} just contributed ${amount_received:.2f} to your '{service.name}' service!"
+                    message = f"{defaults_for_db['contributor_name'] or 'An anonymous contributor'} just contributed ${defaults_for_db['amount']:.2f} to your '{service.name}' service!"
                     UserNotification.objects.create(
                         user=service.registry.created_by,
                         title="New Contribution Received!",
                         message=message,
                     )
         except Service.DoesNotExist:
-            logger.error(f"Stripe Webhook: Service with ID {service_id} not found for payment_intent {payment_intent['id']}.")
+            logger.error(f"Stripe Webhook: Service with ID {service_id} not found for PI {payment_intent_id}.")
             return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
-            logger.error(f"Stripe Webhook: Error processing successful payment_intent {payment_intent['id']}: {e}", exc_info=True)
+            logger.error(f"Stripe Webhook: Error processing payment_intent.succeeded for PI {payment_intent_id}: {e}", exc_info=True)
             return Response(status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     return Response(status=status.HTTP_200_OK)

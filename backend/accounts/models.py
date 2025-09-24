@@ -49,6 +49,7 @@ class User(AbstractUser):
     email = models.EmailField(_("email address"), unique=True)
     email_verified = models.BooleanField(_("email verified"), default=False, help_text=_("Designates whether the email has been verified."))
     firebase_uid = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    stripe_account_id = models.CharField(max_length=255, blank=True, null=True)
 
     objects = UserManager()
 

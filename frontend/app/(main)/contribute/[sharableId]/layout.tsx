@@ -5,7 +5,7 @@ import { Metadata, ResolvingMetadata } from 'next';
 import { PublicRegistryProps } from '@/lib/services/registry/types';
 
 type Props = {
-    params: Promise<{ sharableId: string }>
+    params: { sharableId: string }
 }
 
 
@@ -14,14 +14,25 @@ export async function generateMetadata(
     parent: ResolvingMetadata
 ): Promise<Metadata> {
     // read route params
-    const { sharableId } = await params
+    const { sharableId } = params;
 
     // Base URL
     const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL;
     const url = new URL(`/registries/public/${sharableId}/`, baseURL);
 
+    // try {
     // fetch data
-    const registry = await fetch(url).then((res) => res.json() as Promise<PublicRegistryProps>)
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        // Handle cases where the registry is not found (404) or other server errors
+        return {
+            title: 'Registry Not Found | PamperMomma',
+            description: 'The registry you are looking for could not be found.',
+        };
+    }
+
+    const registry: PublicRegistryProps = await response.json();
 
     // optionally access and extend (rather than replace) parent metadata
     const previousImages = (await parent).openGraph?.images || []
@@ -33,18 +44,16 @@ export async function generateMetadata(
         openGraph: {
             title: `${registry.name} Pamper Registry` || 'Pamper Registry',
             description: `Pamper Registry for ${registry.name} - Shareable ID: ${registry.shareable_id}`,
-            // url: url.toString(),
-            // images: [
-            //     ...previousImages,
-            //     {
-            //         url: `${baseURL}/images/registry-banner.jpg`, // Replace with actual image URL
-            //         width: 1200,
-            //         height: 630,
-            //         alt: `Registry for ${registry.name}`
-            //     }
-            // ]
         },
     }
+    // } catch (error) {
+    //     // This catches network errors like "fetch failed"
+    //     console.error("Failed to generate metadata due to network error:", error);
+    //     return {
+    //         title: 'Error Loading Registry | PamperMomma',
+    //         description: 'There was a problem connecting to our services to load this registry.',
+    //     }
+    // }
 }
 
 

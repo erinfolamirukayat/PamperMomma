@@ -40,7 +40,8 @@ export function Menubar(props: {
     const onRegistrySwitch = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const value = e.target.value
         if (value === "") return;
-        router.push(`/mom/registries/${value}`)
+        // The `value` is either the registry ID or 'shared/{sharedId}', so we can construct the URL directly.
+        router.push(`/mom/registries/${value}`);
         props.onClickNewPage?.()
     }
 

@@ -1,5 +1,9 @@
 from rest_framework import serializers
 from . import models
+from django.utils import timezone
+from django.db.models import Sum
+from decimal import Decimal
+
 
 
 class DefaultServiceSerializer(serializers.ModelSerializer):
@@ -54,6 +58,15 @@ class CreatePaymentIntentSerializer(serializers.Serializer):
     contributor_name = serializers.CharField(max_length=100, required=False, allow_blank=True)
     contributor_email = serializers.EmailField(required=False, allow_blank=True)
 
+class FinalizeWithdrawalSerializer(serializers.Serializer):
+    """Serializer for validating the final withdrawal request with OTP."""
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=1.00)
+    otp = serializers.CharField(max_length=6)
+    device_identity = serializers.CharField(max_length=255)
+
+class InitiateWithdrawalSerializer(serializers.Serializer):
+    """Serializer for validating the initiation of a withdrawal."""
+    amount = serializers.DecimalField(max_digits=10, decimal_places=2, min_value=1.00)
 
 # class VolunteerContributionSerializer(serializers.ModelSerializer):
 #     """
@@ -159,12 +172,60 @@ class RegistrySerializer(serializers.ModelSerializer):
     This serializer is used to convert Registry model instances to JSON format and vice versa.
     """
     services = ServiceSerializer(many=True, required=False)
+    payouts_enabled = serializers.SerializerMethodField()
+    total_withdrawn = serializers.SerializerMethodField()
+    total_fees = serializers.SerializerMethodField()
+    stripe_balance = serializers.SerializerMethodField()
 
     class Meta:
         model = models.Registry
         fields = '__all__'
         read_only_fields = ('created_at', 'updated_at',
                             'sharable_id', 'created_by')
+    
+    def get_payouts_enabled(self, obj) -> bool:
+        """
+        Check if the registry owner has a Stripe account ID.
+        """
+        return bool(obj.created_by.stripe_account_id)
+
+    def get_total_withdrawn(self, obj) -> str:
+        """Calculates the total amount withdrawn or pending withdrawal for the registry."""
+        total = obj.withdrawals.filter(status__in=['pending', 'succeeded']).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        return str(total)
+
+    def get_total_fees(self, obj) -> str:
+        """Calculates the total Stripe fees for all successful contributions to the registry."""
+        total_fees = models.Contribution.objects.filter(
+            service__registry=obj, status='succeeded'
+        ).aggregate(total=Sum('fee'))['total'] or Decimal('0.00')
+        return str(total_fees)
+
+    def get_stripe_balance(self, obj) -> dict:
+        """
+        Calculates the user-specific available and pending balances based on contribution data.
+        """
+        now = timezone.now()
+
+        # Sum of contributions that are now available
+        available_contributions = models.Contribution.objects.filter(
+            service__registry=obj, status='succeeded', available_on__lte=now
+        ).aggregate(total_amount=Sum('amount'), total_fee=Sum('fee'))
+
+        # Sum of contributions that are still pending
+        pending_contributions = models.Contribution.objects.filter(
+            service__registry=obj, status='succeeded', available_on__gt=now
+        ).aggregate(total_amount=Sum('amount'), total_fee=Sum('fee'))
+
+        net_available = (available_contributions['total_amount'] or Decimal('0.00')) - (available_contributions['total_fee'] or Decimal('0.00'))
+        net_pending = (pending_contributions['total_amount'] or Decimal('0.00')) - (pending_contributions['total_fee'] or Decimal('0.00'))
+
+        # Total already withdrawn or in the process of being withdrawn
+        total_withdrawn = obj.withdrawals.filter(status__in=['pending', 'succeeded']).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+        true_withdrawable_amount = net_available - total_withdrawn
+
+        return {'available': str(true_withdrawable_amount), 'pending': str(net_pending)}
     
     def create(self, validated_data):
         """
@@ -209,7 +270,7 @@ class PublicServiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Service
-        exclude = ['total_withdrawn']
+        exclude = []
         read_only_fields = ('created_at', 'updated_at', 'registry', 'cashed_out')
     
     def get_is_owned_by_user(self, obj) -> bool:

@@ -1,10 +1,21 @@
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.utils import timezone
+import stripe
+from django.conf import settings
+from utilities.email import EmailDispatcher
+import logging
+from accounts.models import OTPRequest
 from drf_spectacular.utils import extend_schema
 from . import models, serializers
+from decimal import Decimal
+from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 
 class RegistryViewSet(viewsets.ModelViewSet):
@@ -22,6 +33,214 @@ class RegistryViewSet(viewsets.ModelViewSet):
         This ensures that users can only access registries they have created.
         """
         return self.queryset.filter(created_by=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Override retrieve to enrich the response with real-time Stripe balance information.
+        This method also lazily updates contribution records with fee and availability data.
+        """
+        instance = self.get_object()
+
+        # --- START of new lazy-loading logic ---
+        contributions_to_update = models.Contribution.objects.filter(
+            service__registry=instance,
+            status='succeeded',
+            available_on__isnull=True  # Find contributions that need updating
+        )
+
+        updated_contributions = []
+        for contrib in contributions_to_update:
+            try:
+                print(f"[LAZY LOAD] Updating contribution for PI: {contrib.stripe_payment_intent_id}")
+                payment_intent = stripe.PaymentIntent.retrieve(contrib.stripe_payment_intent_id)
+                charge_id = payment_intent.get('latest_charge')
+
+                if charge_id:
+                    charge = stripe.Charge.retrieve(charge_id)
+                    balance_transaction_id = charge.get('balance_transaction')
+                    if balance_transaction_id:
+                        balance_transaction = stripe.BalanceTransaction.retrieve(balance_transaction_id)
+                        contrib.fee = Decimal(balance_transaction.fee) / 100
+                        if balance_transaction.available_on:
+                            contrib.available_on = datetime.fromtimestamp(balance_transaction.available_on, tz=timezone.utc)
+                        updated_contributions.append(contrib)
+            except Exception as e:
+                logger.error(f"Failed to lazily update contribution {contrib.id}: {e}", exc_info=True)
+        
+        if updated_contributions:
+            models.Contribution.objects.bulk_update(updated_contributions, ['fee', 'available_on'])
+            print(f"[LAZY LOAD] Bulk updated {len(updated_contributions)} contributions.")
+        # --- END of new lazy-loading logic ---
+
+        # The serializer now handles all financial calculations.
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['post'], url_path='create-connect-account')
+    def create_stripe_connect_account(self, request):
+        """
+        Creates a Stripe Express account for the logged-in user and returns an onboarding link.
+        If an account already exists, it returns a new login link to manage the account.
+        """
+        user = request.user
+        try:
+            # If the user already has a Stripe account, create a login link to manage it.
+            if user.stripe_account_id:
+                account = stripe.Account.retrieve(user.stripe_account_id)
+                # If onboarding is complete, create a login link.
+                if account.details_submitted:
+                    login_link = stripe.Account.create_login_link(user.stripe_account_id)
+                    return Response({'url': login_link.url})
+
+            # If no account or onboarding is incomplete, create a new account or use existing one.
+            if not user.stripe_account_id:
+                account = stripe.Account.create(
+                    type='express',
+                    email=user.email,
+                    business_type='individual',
+                    capabilities={'card_payments': {'requested': True}, 'transfers': {'requested': True}},
+                )
+                user.stripe_account_id = account.id
+                user.save()
+            else:
+                account = stripe.Account.retrieve(user.stripe_account_id)
+
+            # Construct return and refresh URLs from frontend settings
+            from urllib.parse import urljoin
+            base_frontend_url = urljoin(settings.FRONTEND_VERIFY_EMAIL_URL, '.')
+            return_url = urljoin(base_frontend_url, '/mom/registries?onboarding_return=success')
+            refresh_url = urljoin(base_frontend_url, '/mom/registries?onboarding_return=refresh')
+
+            account_link = stripe.AccountLink.create(
+                account=account.id,
+                refresh_url=refresh_url,
+                return_url=return_url,
+                type='account_onboarding',
+            )
+            return Response({'url': account_link.url})
+        except stripe.error.StripeError as e:
+            return Response({'detail': f"An error occurred with our payment processor: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['post'], url_path='initiate-withdrawal-verification')
+    def initiate_withdrawal_verification(self, request, pk=None):
+        """
+        Initiates the withdrawal process by sending a verification code to the user's email.
+        """
+        registry = self.get_object()
+        user = request.user
+
+        if registry.created_by != user:
+            return Response({"detail": "You do not have permission to withdraw from this registry."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = serializers.InitiateWithdrawalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        amount = serializer.validated_data['amount']
+
+        # Re-calculate the true withdrawable amount for validation
+        now = timezone.now()
+        available_contributions = models.Contribution.objects.filter(
+            service__registry=registry, status='succeeded', available_on__lte=now
+        ).aggregate(total_amount=Sum('amount'), total_fee=Sum('fee'))
+        
+        net_available = (available_contributions['total_amount'] or Decimal('0.00')) - (available_contributions['total_fee'] or Decimal('0.00'))
+        total_withdrawn = registry.withdrawals.filter(status__in=['pending', 'succeeded']).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        
+        available_balance = net_available - total_withdrawn
+        
+        if amount > available_balance:
+            return Response({"detail": f"Withdrawal amount exceeds available balance of ${available_balance:.2f}."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate OTP and device identity token
+        otp = OTPRequest.generate_otp()
+        device_hashed_token, device_plain_token = OTPRequest.generate_device_token()
+        
+        # Store the OTP request
+        ref_id = f"withdrawal:{registry.id}:{user.id}"
+        OTPRequest.objects.create(
+            ref=ref_id, otp=otp, device_identity=device_hashed_token
+        )
+
+        try:
+            # Send the email with the OTP
+            EmailDispatcher.send_withdrawal_verification_otp(
+                otp=otp, email=user.email, amount=amount, registry_name=registry.name
+            )
+        except Exception as e:
+            logger.error(f"Error sending withdrawal verification OTP: {e}")
+            return Response({'detail': 'Failed to send verification code.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        return Response({'detail': 'Verification code sent.', 'device_identity': device_plain_token}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['post'])
+    @transaction.atomic
+    def withdraw(self, request, pk=None):
+        """
+        Allows a registry owner to withdraw available funds to their Stripe account
+        after verifying with an OTP.
+        """
+        registry = self.get_object()
+        user = request.user
+
+        if registry.created_by != user:
+            return Response({"detail": "You do not have permission to withdraw from this registry."}, status=status.HTTP_403_FORBIDDEN)
+
+        if not user.stripe_account_id:
+            return Response({"detail": "No Stripe account is connected. Please set up payouts first."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = serializers.FinalizeWithdrawalSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        amount_to_withdraw = serializer.validated_data['amount']
+        otp = serializer.validated_data['otp']
+        device_identity = serializer.validated_data['device_identity']
+
+        # Verify OTP
+        ref_id = f"withdrawal:{registry.id}:{user.id}"
+        otp_entry = OTPRequest.objects.filter(ref=ref_id, otp=otp).order_by('-created_at').first()
+        if not otp_entry or not otp_entry.is_valid(device_identity):
+            return Response({'detail': 'Invalid or expired verification code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Final, definitive balance check before initiating transfer
+        now = timezone.now()
+        available_contributions = models.Contribution.objects.filter(
+            service__registry=registry, status='succeeded', available_on__lte=now
+        ).aggregate(total_amount=Sum('amount'), total_fee=Sum('fee'))
+        
+        net_available = (available_contributions['total_amount'] or Decimal('0.00')) - (available_contributions['total_fee'] or Decimal('0.00'))
+        total_withdrawn = registry.withdrawals.filter(status__in=['pending', 'succeeded']).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        
+        available_balance = net_available - total_withdrawn
+
+        if amount_to_withdraw > available_balance:
+            return Response({"detail": f"Withdrawal amount of ${amount_to_withdraw:.2f} exceeds available balance of ${available_balance:.2f}."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Verify the connected Stripe account is ready for transfers
+        try:
+            account = stripe.Account.retrieve(user.stripe_account_id)
+            if not account.details_submitted or account.capabilities.get('transfers') != 'active':
+                return Response({"detail": "Your payout account is not yet ready to receive funds. Please complete your Stripe onboarding or check your account status."}, status=status.HTTP_400_BAD_REQUEST)
+        except stripe.error.StripeError as e:
+            logger.error(f"Error retrieving Stripe account {user.stripe_account_id}: {e}")
+            return Response({"detail": "Could not verify your payout account status. Please try again later."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        try:
+            # Create a Stripe Transfer to the connected account
+            transfer = stripe.Transfer.create(
+                amount=int(amount_to_withdraw * 100),  # Amount in cents
+                currency="usd",
+                destination=user.stripe_account_id,
+                description=f"Withdrawal for PamperMomma registry: {registry.name}"
+            )
+
+            # Record the withdrawal in our database with a pending status
+            withdrawal = models.Withdrawal.objects.create(
+                registry=registry,
+                amount=amount_to_withdraw,
+                status='pending',
+                stripe_transfer_id=transfer.id
+            )
+            return Response({"status": "success", "message": "Withdrawal initiated successfully. It may take a few business days to appear in your account.", "transfer_id": transfer.id}, status=status.HTTP_200_OK)
+        except stripe.error.StripeError as e:
+            return Response({"detail": f"An error occurred with our payment processor: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 class PublicRegistryViewSet(

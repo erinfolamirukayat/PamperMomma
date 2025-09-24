@@ -5,6 +5,7 @@ export interface Contribution {
     contributor_email: string;
     status: string;
     created_at: string;
+    fee: string;
     updated_at: string;
 }
 
@@ -39,6 +40,13 @@ export interface Registry {
     owner_first_name: string;
     created_at: string;
     updated_at: string;
+    stripe_balance?: {
+        available: string;
+        pending: string;
+    };
+    total_withdrawn: string;
+    total_fees: string;
+    payouts_enabled: boolean;
     services: Service[];
 }
 

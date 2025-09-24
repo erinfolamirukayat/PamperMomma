@@ -4,12 +4,14 @@ import { ServiceWidget } from '@/components/service/ServiceWidget';
 import Link from 'next/link';
 import { Registry } from '@/lib/services/registry/types';
 import { useParams } from 'next/navigation';
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Icon } from '@iconify/react';
 import { FinancialSummary, RegistryHeader, RegistryOverview } from '@/components/registry';
 import { formatDate } from '@/lib/helper';
-import { HulkFetchErrorProps, useHulkAlert, useHulkFetch } from 'hulk-react-utils';
+import { HulkFetchErrorProps, useHulkAlert, useHulkFetch, useHulk } from 'hulk-react-utils';
 import { useRegistryData } from '@/lib/hooks/useRegistryData';
+import { WithdrawalModal } from '@/components/service/WithdrawalModal';
+import { PayoutSetupModal } from '@/components/service/PayoutSetupModal';
 import { ErrorModal } from '@/components/modals';
 
 interface PageClientProps {
@@ -19,10 +21,39 @@ interface PageClientProps {
 function PageClient({ accessToken }: PageClientProps) {
     const { registryId } = useParams();
     const alert = useHulkAlert();
+    const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+    const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+    const [isCreatingConnectAccount, setIsCreatingConnectAccount] = useState(false);
+    const { auth } = useHulk();
     const {
         dispatch: goRegistries,
         data: registriesData
     } = useHulkFetch<Registry>(`/registries/r/${registryId}/`);
+
+    const { dispatch: createConnectAccount } = useHulkFetch<{ url: string }>('/registries/r/create-connect-account/', {
+        onSuccess: (data) => {
+            // Redirect user to Stripe onboarding/management page
+            if (data.url) {
+                window.location.href = data.url;
+            }
+            setIsCreatingConnectAccount(false);
+        },
+        onError: (e) => {
+            alert.push(<ErrorModal error={e} />, { alertId: 'create-connect-account-error' });
+            setIsCreatingConnectAccount(false);
+        }
+    });
+
+    const handleSetupPayouts = () => {
+        setIsPayoutModalOpen(true);
+    };
+    const handleContinueToStripe = () => {
+        setIsCreatingConnectAccount(true);
+        createConnectAccount({ method: 'POST' });
+    };
+    const handleWithdrawClick = () => {
+        setIsWithdrawalModalOpen(true);
+    };
 
     useEffect(() => {
         if (registryId) {
@@ -65,10 +96,25 @@ function PageClient({ accessToken }: PageClientProps) {
         }
     };
 
-    const { availableServices, completedServices, totalRaised, totalCost, totalWithdrawn, availableBalance } = useRegistryData(registriesData);
+    const { availableServices, completedServices, totalRaised, totalFees, totalCost, totalWithdrawn, availableBalance } = useRegistryData(registriesData);
 
     return (
         <main className='relative min-h-full flex-1'>
+            <PayoutSetupModal
+                isOpen={isPayoutModalOpen}
+                onClose={() => setIsPayoutModalOpen(false)}
+                onContinue={handleContinueToStripe}
+                isLoading={isCreatingConnectAccount}
+            />
+            {registriesData && (
+                <WithdrawalModal
+                    isOpen={isWithdrawalModalOpen}
+                    onClose={() => setIsWithdrawalModalOpen(false)}
+                    availableBalance={parseFloat(registriesData.stripe_balance?.available || '0.00')}
+                    onSuccess={() => goRegistries({ method: 'GET' })}
+                />
+            )}
+
             {registriesData && (
                 <>
                     {/* Registry Header */}
@@ -89,14 +135,15 @@ function PageClient({ accessToken }: PageClientProps) {
                         total_cost={`$${totalCost.toFixed(2)}`}
                     />
 
-                    {/* Financial Summary */}
-                    {(totalRaised > 0) && (
-                        <FinancialSummary
-                            total_contribution={totalRaised.toFixed(2)}
-                            total_withdrawn={totalWithdrawn.toFixed(2)}
-                            available_balance={(availableBalance).toFixed(2)}
-                        />
-                    )}
+                    <FinancialSummary
+                        total_contribution={totalRaised.toFixed(2)}
+                        total_withdrawn={totalWithdrawn.toFixed(2)}
+                        total_fees={totalFees.toFixed(2)}
+                        stripe_balance={registriesData.stripe_balance || { available: '0.00', pending: '0.00' }}
+                        payouts_enabled={registriesData.payouts_enabled}
+                        onSetupPayoutsClick={handleSetupPayouts}
+                        onWithdrawClick={handleWithdrawClick}
+                    />
                 </>
             )}
 

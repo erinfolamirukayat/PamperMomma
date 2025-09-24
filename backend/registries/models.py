@@ -143,13 +143,6 @@ class Service(models.Model):
     #     verbose_name=_("Cashed Out"),
     #     help_text=_("Indicates if the service has been cashed out."),
     # )
-    total_withdrawn = models.DecimalField(
-        max_digits=10,
-        decimal_places=2,
-        default=Decimal('0.00'),
-        verbose_name=_("Total Withdrawn"),
-        help_text=_("The total amount withdrawn for this service."),
-    )
 
     class Meta:
         verbose_name = "Service"
@@ -174,9 +167,10 @@ class Service(models.Model):
     def available_withdrawable_amount(self):
         """
         Calculates the available amount that can be withdrawn for this service.
-        This is the total contributions minus the total withdrawn amount.
+        This is the net total of contributions for this service.
         """
-        return self.total_contributions() - self.total_withdrawn
+        total_fees = self.contributions.filter(status='succeeded').aggregate(total_fee=models.Sum('fee'))['total_fee'] or Decimal('0.00')
+        return self.total_contributions() - total_fees
     
     def is_completed(self):
         """
@@ -252,6 +246,13 @@ class Contribution(TimeStampedBaseModel):
         verbose_name=_("Amount"),
         help_text=_("The amount contributed towards the service."),
     )
+    fee = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name=_("Processing Fee"),
+        help_text=_("The processing fee charged by the payment provider."),
+    )
     contributor_name = models.CharField(
         max_length=100,
         blank=True,
@@ -277,6 +278,12 @@ class Contribution(TimeStampedBaseModel):
         verbose_name=_("Status"),
         help_text=_("The status of the payment from Stripe."),
     )
+    available_on = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name=_("Available On"),
+        help_text=_("The date and time when the funds from this contribution will be available."),
+    )
 
     class Meta:
         verbose_name = "Contribution"
@@ -285,6 +292,38 @@ class Contribution(TimeStampedBaseModel):
     def __str__(self):
         service_name = self.service.name if self.service else "a deleted service"
         return f"${self.amount} for {service_name} ({self.status})"
+    
+class Withdrawal(TimeStampedBaseModel):
+    """Represents a withdrawal of funds by a registry owner."""
+    registry = models.ForeignKey(
+        Registry,
+        on_delete=models.CASCADE,
+        related_name="withdrawals",
+        verbose_name=_("Registry"),
+    )
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name=_("Amount"),
+    )
+    status = models.CharField(
+        max_length=50,
+        default='pending',
+        verbose_name=_("Status"),
+    )
+    stripe_transfer_id = models.CharField(
+        max_length=255,
+        unique=True,
+        db_index=True,
+        verbose_name=_("Stripe Transfer ID"),
+    )
+
+    class Meta:
+        verbose_name = "Withdrawal"
+        verbose_name_plural = "Withdrawals"
+
+    def __str__(self):
+        return f"${self.amount} for {self.registry.name} ({self.status})"
 
 
 # class VolunteerContribution(models.Model):
