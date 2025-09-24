@@ -4,13 +4,10 @@ import React from 'react'
 import { Metadata, ResolvingMetadata } from 'next';
 import { PublicRegistryProps } from '@/lib/services/registry/types';
 
-type Props = {
-    params: { sharableId: string }
-}
-
-
 export async function generateMetadata(
-    { params }: Props,
+    { params }: {
+        params: { sharableId: string }
+    },
     parent: ResolvingMetadata
 ): Promise<Metadata> {
     // read route params
