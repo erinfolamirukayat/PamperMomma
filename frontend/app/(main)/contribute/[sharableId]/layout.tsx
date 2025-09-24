@@ -3,15 +3,10 @@ import Link from 'next/link';
 import React from 'react'
 import { Metadata, ResolvingMetadata } from 'next';
 import { PublicRegistryProps } from '@/lib/services/registry/types';
-import {ContributeHeader} from '@/components/headers'
 
-export async function generateMetadata(
-    { params }: {
-        params: { sharableId: string }
-    },
-    parent: ResolvingMetadata
-): Promise<Metadata> {
+export async function generateMetadata(props: LayoutProps<'/contribute/[sharableId]'>, parent: ResolvingMetadata): Promise<Metadata> {
     // read route params
+    const params = await props.params;
     const { sharableId } = params;
 
     // Base URL
@@ -58,7 +53,15 @@ export async function generateMetadata(
 function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
     return (
         <div className='relative'>
-            <ContributeHeader />
+            {/* header */}
+            <section className='sticky top-0 z-20 w-full h-16 bg-primary-500 flex items-center justify-center shadow-md'>
+                <Link href="/" className="flex items-center space-x-2">
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center">
+                        <Icon icon="material-symbols:favorite" className="text-primary-500 text-lg" />
+                    </div>
+                    <span className="text-2xl font-bold text-white">PamperMomma</span>
+                </Link>
+            </section>
             {/* content */}
             {children}
         </div>
