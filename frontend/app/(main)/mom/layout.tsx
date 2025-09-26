@@ -1,12 +1,14 @@
 'use client'
 
 import { Appbar, Menubar } from '@/components/menubar'
-import { User } from '@/lib/services/auth/types'
 import gsap from 'gsap'
 import { useGSAP } from '@gsap/react'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { useHulk, useHulkFetch } from 'hulk-react-utils'
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useRouter } from "next/navigation";
+import { CreateRegistry, Registry } from "@/lib/services/registry/types";
+import { User } from '@/lib/services/auth/types'
 
 gsap.registerPlugin(useGSAP);
 gsap.registerPlugin(ScrollTrigger);
@@ -15,7 +17,10 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
     // This layout is used for the dashboard
     const container = useRef<HTMLDivElement>(null);
     const { contextSafe } = useGSAP({ scope: container });
-    const hulk = useHulk()
+    const hulk = useHulk();
+    const router = useRouter();
+    const [isProcessing, setIsProcessing] = useState(true);
+
     const { data: user, dispatch } = useHulkFetch<User>('/accounts/me/profile/', {
         onSuccess(data, alert) {
             // If the user profile is successfully fetched, update the auth context
@@ -23,16 +28,54 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
             console.log('User profile updated in auth context:', data)
         }
     });
-    useEffect(() => {
-        (async () => {
-            if (hulk.auth.state?.user === undefined) {
-                // If the user is not authenticated, try to fetch the user profile
-                console.log('Fetching user profile...')
-                dispatch({ method: 'GET' })
 
+    const { dispatch: createRegistry } = useHulkFetch<Registry>("/registries/r/", {
+        onSuccess: (data) => {
+            console.log('Registry created successfully from session data:', data);
+            // CRITICAL: Clear the session storage to prevent infinite loops and data leakage.
+            sessionStorage.removeItem('new-registry');
+            // Redirect to the newly created registry's page.
+            router.push(`/mom/registries/${data.id}`);
+        },
+        onError: (error) => {
+            console.error('Failed to create registry from session data:', error);
+            // CRITICAL: Clear the invalid data to prevent retries.
+            sessionStorage.removeItem('new-registry');
+            setIsProcessing(false); // Allow rendering to continue.
+        }
+    });
+
+    useEffect(() => {
+        const newRegistryData = sessionStorage.getItem('new-registry');
+        if (newRegistryData) {
+            setIsProcessing(true); // Show loading state while we process the session data.
+            try {
+                const registryPayload: CreateRegistry = JSON.parse(newRegistryData);
+                if (registryPayload.services && registryPayload.services.length > 0) {
+                    createRegistry({ method: 'POST', body: JSON.stringify(registryPayload) });
+                } else {
+                    // Data is invalid or incomplete, clear it and stop processing.
+                    sessionStorage.removeItem('new-registry');
+                    setIsProcessing(false);
+                }
+            } catch (error) {
+                console.error("Error parsing registry data from session storage", error);
+                sessionStorage.removeItem('new-registry'); // Clear corrupted data.
+                setIsProcessing(false);
             }
-        })() // Fetch user profile on initial load
-    }, [])
+        } else {
+            // No onboarding data found, proceed normally.
+            setIsProcessing(false);
+            if (hulk.auth.state?.user === undefined) {
+                // Only fetch if not already fetched.
+                if (!user) {
+                    console.log('Fetching user profile...');
+                    dispatch({ method: 'GET' });
+                }
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [hulk.auth.state?.user?.id]); // Depend on a stable value like user ID
 
     const breakpoint = 768; // Define the breakpoint for responsiveness
     useGSAP(() => {
@@ -105,7 +148,13 @@ function Layout({ children }: Readonly<{ children: React.ReactNode }>) {
             />
             <section className='main-view min-h-screen flex flex-col'>
                 <Appbar onMenuPressed={openMenu} />
-                {children}
+                {isProcessing ? (
+                    <div className="flex-1 flex items-center justify-center bg-neutral-50">
+                        <p className="text-neutral-600">Finalizing your setup...</p>
+                    </div>
+                ) : (
+                    children
+                )}
             </section>
         </div>
     )

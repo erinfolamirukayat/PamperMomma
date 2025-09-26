@@ -1,13 +1,14 @@
 "use client"
 
+import { ServiceListCard } from '@/components/cards';
 import { InputField } from '@/components/inputs';
 import { AppLogo } from '@/components/logo';
 import { CreateRegistry, DefaultService } from '@/lib/services/registry/types'
-import { Dialog, DialogBackdrop } from '@headlessui/react';
-import { Icon } from '@iconify/react/dist/iconify.js';
 import { useHulkFetch } from 'hulk-react-utils';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react'
+import { Dialog, DialogBackdrop } from '@headlessui/react';
+import { Icon } from '@iconify/react/dist/iconify.js';
 
 interface LocalDefaultService extends DefaultService {
     isLocal?: boolean;
@@ -123,14 +124,17 @@ function Page() {
             <p className='text-body-desktop max-w-2xl text-center'>Choose from our curated list of services to include in your registry. 
                 You can as well add custom services that suit your unique needs.</p>
             {/* Service selection UI goes here */}
-            <section className='w-full max-w-4xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 py-6 mb-24'>
-                {localDefaultService.map(service =>
-                    <ServiceSelectionTile
-                        service={service}
+            <section className='w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-6 py-8 mb-24'>
+                {localDefaultService.map((service, index) =>
+                    <ServiceListCard
                         key={service.name}
+                        serviceName={service.name}
+                        description={service.description}
+                        totalHours={service.hours}
+                        costPerHour={parseFloat(service.cost_per_hour)}
                         isSelected={myServices.some(s => s.name === service.name)}
-                        onSelect={onSelectService}
-                        onDelete={onDeleteLocalDefaultService}
+                        onSelect={() => onSelectService(service)}
+                        onDelete={service.isLocal ? () => onDeleteLocalDefaultService(service) : undefined}
                     />
                 )}
             </section>
@@ -167,47 +171,6 @@ function Page() {
 }
 
 export default Page
-
-
-
-
-function ServiceSelectionTile(props: {
-    service: LocalDefaultService,
-    isSelected: boolean,
-    onSelect: (service: LocalDefaultService) => void
-    onDelete?: (service: LocalDefaultService) => void
-}) {
-    // A tile representing a service that can be added to the registry
-    // Args: service name, description, hours, cost per hour in USD, isSelected, onSelect
-    return (
-        <div
-            className={`relative border rounded-lg p-4 flex flex-col gap-2 cursor-pointer hover:shadow-md transition ${props.isSelected ? 'border-primary-500 bg-primary-50 border-2' : 'border-neutral-300'}`}
-            onClick={() => props.onSelect(props.service)}
-        >
-            {/* Remove button */}
-            {props.onDelete && props.service.isLocal &&
-                <button
-                    className='absolute top-2 right-2 text-red-500 hover:text-red-700 transition-opacity'
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        props.onDelete && props.onDelete(props.service);
-                    }
-                    }
-                    title='Remove this custom service'
-                >
-                    <Icon icon="material-symbols:close" className="h-6 w-6" />
-                </button>
-            }
-            {/* Service details */}
-            <h2 className='text-headline-desktop-small flex-1 wrap-break-word'>{props.service.name}</h2>
-            <p className='text-body-desktop-small text-neutral-700 text-justify'>{props.service.description}</p>
-            <div className='flex flex-row justify-between items-center mt-4'>
-                <span className='text-label-desktop text-neutral-900'>{props.service.hours} hrs</span>
-                <span className='text-label-desktop text-neutral-900'>${props.service.cost_per_hour}/hr</span>
-            </div>
-        </div>
-    )
-}
 
 function CustomLocalServiceModal(props: {
     isOpen: boolean,

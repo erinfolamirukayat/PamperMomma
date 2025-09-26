@@ -24,7 +24,6 @@ class RegistryViewSet(viewsets.ModelViewSet):
     This can be extended by other viewsets to implement specific registry functionalities.
     """
     queryset = models.Registry.objects.all()
-    serializer_class = serializers.RegistrySerializer
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
@@ -33,6 +32,14 @@ class RegistryViewSet(viewsets.ModelViewSet):
         This ensures that users can only access registries they have created.
         """
         return self.queryset.filter(created_by=self.request.user)
+
+    def get_serializer_class(self):
+        """
+        Return the appropriate serializer class based on the request action.
+        """
+        if self.action == 'create':
+            return serializers.RegistrySerializer
+        return serializers.RegistrySerializer
 
     def retrieve(self, request, *args, **kwargs):
         """
@@ -369,8 +376,8 @@ class DefaultServiceViewSet(
     viewsets.GenericViewSet,
 ):
     """
-    A default viewset for service operations.
-    This can be used as a base for other service-related viewsets.
+    A read-only viewset for listing default services.
+    This is used to provide suggestions during the registry creation process.
     """
     queryset = models.DefaultService.objects.all()
     serializer_class = serializers.DefaultServiceSerializer

@@ -8,20 +8,12 @@ from decimal import Decimal
 
 class DefaultServiceSerializer(serializers.ModelSerializer):
     """
-    Default serializer for the Service model.
-    This serializer is used to convert Service model instances to JSON format and vice versa.
+    Serializer for the DefaultService model.
+    This is used to provide a list of suggested services during registry creation.
     """
-    # total_cost = serializers.DecimalField(
-    #     read_only=True,
-    #     max_digits=10,
-    #     decimal_places=2
-    # )
-    
     class Meta:
         model = models.DefaultService
-        fields = ['name', 'description', 'hours', 'cost_per_hour']
-        # all fields are read-only
-        read_only_fields = ('created_at', 'updated_at', 'registry')
+        fields = ['id', 'name', 'description', 'hours', 'cost_per_hour']
 
 
 class DefaultRegistrySerializer(serializers.ModelSerializer):

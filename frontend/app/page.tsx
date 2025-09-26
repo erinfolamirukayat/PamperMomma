@@ -76,13 +76,12 @@ export default async function Home() {
       <section className="px-4 py-20 mx-auto">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h1 className="text-5xl md:text-6xl font-black text-neutral-900 leading-tight mb-6">
+            <h1 className="text-5xl md:text-6xl font-black text-neutral-900 leading-tight mb-4">
               Every Mom Deserves to be
               <span className="text-primary-600"> Pampered</span>
             </h1>
             <p className="text-xl text-neutral-700 mb-8 leading-relaxed">
-              Connect with trusted caregivers and services designed specifically for mothers.
-              From childcare to wellness services, we help you find the support you need.
+              Create a pamper registry of essential services for your postpartum journey. Let friends and family contribute to what you truly need—rest, recovery, and peace of mind.
             </p>
             <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
               <Link href="/onboarding" className="bg-primary-500 text-neutral-100 rounded-full hover:bg-primary-600 transition-colors text-lg px-8 py-4">Start Your Journey</Link>
@@ -96,29 +95,29 @@ export default async function Home() {
               <div className="bg-white rounded-2xl p-6 space-y-4">
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-orange-400 rounded-full flex items-center justify-center">
-                    <Icon icon="material-symbols:child-care" className="text-white text-xl" />
+                    <Icon icon="material-symbols:cleaning-services-outline" className="text-white text-xl" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-neutral-900">Trusted Childcare</h3>
-                    <p className="text-neutral-600 text-sm">Available 24/7</p>
+                    <h3 className="font-semibold text-neutral-900">Fund Essential Services</h3>
+                    <p className="text-neutral-600 text-sm">From house cleaning to meal prep.</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-green-400 rounded-full flex items-center justify-center">
-                    <Icon icon="material-symbols:spa" className="text-white text-xl" />
+                    <Icon icon="material-symbols:redeem-outline" className="text-white text-xl" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-neutral-900">Wellness Services</h3>
-                    <p className="text-neutral-600 text-sm">Self-care made easy</p>
+                    <h3 className="font-semibold text-neutral-900">Receive the Gift of Time</h3>
+                    <p className="text-neutral-600 text-sm">More rest and quality time with baby.</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-red-400 rounded-full flex items-center justify-center">
-                    <Icon icon="material-symbols:group" className="text-white text-xl" />
+                    <Icon icon="material-symbols:groups-outline" className="text-white text-xl" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-neutral-900">Mom Community</h3>
-                    <p className="text-neutral-600 text-sm">Connect & support</p>
+                    <h3 className="font-semibold text-neutral-900">Support from Loved Ones</h3>
+                    <p className="text-neutral-600 text-sm">Friends and family can easily contribute.</p>
                   </div>
                 </div>
               </div>
@@ -135,39 +134,39 @@ export default async function Home() {
               Why Moms Choose PamperMomma
             </h2>
             <p className="text-xl text-neutral-600 mx-auto">
-              We understand the unique challenges mothers face. Our platform is built to provide
-              reliable, safe, and convenient solutions for busy moms.
+              Focus on your baby, not the chores. A Pamper Registry lets you build a support system
+              that makes the postpartum period easier and more joyful.
             </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
             <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-orange-100 to-orange-200">
               <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Icon icon="material-symbols:verified-user" className="text-white text-2xl" />
+                <Icon icon="material-symbols:add-shopping-cart-outline" className="text-white text-2xl" />
               </div>
-              <h3 className="text-2xl font-bold text-neutral-900 mb-4">Verified Caregivers</h3>
+              <h3 className="text-2xl font-bold text-neutral-900 mb-4">Build Your Registry</h3>
               <p className="text-neutral-700">
-                All our caregivers are thoroughly vetted with background checks and references.
+                Easily add services you'll actually need, like house cleaning, meal prep, and childcare.
               </p>
             </div>
 
             <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-green-100 to-green-200">
               <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Icon icon="material-symbols:schedule" className="text-white text-2xl" />
+                <Icon icon="material-symbols:share-outline" className="text-white text-2xl" />
               </div>
-              <h3 className="text-2xl font-bold text-neutral-900 mb-4">Flexible Scheduling</h3>
+              <h3 className="text-2xl font-bold text-neutral-900 mb-4">Share with Loved Ones</h3>
               <p className="text-neutral-700">
-                Book services when you need them, from last-minute requests to regular appointments.
+                Send a simple, shareable link to friends and family who want to support you.
               </p>
             </div>
 
             <div className="text-center p-8 rounded-2xl bg-gradient-to-br from-red-100 to-red-200">
               <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Icon icon="material-symbols:favorite" className="text-white text-2xl" />
+                <Icon icon="material-symbols:account-balance-wallet-outline" className="text-white text-2xl" />
               </div>
-              <h3 className="text-2xl font-bold text-neutral-900 mb-4">Made for Moms</h3>
+              <h3 className="text-2xl font-bold text-neutral-900 mb-4">Get Peace of Mind</h3>
               <p className="text-neutral-700">
-                Every feature is designed with mothers' needs in mind, by mothers who understand.
+                Receive funds directly and hire the help you need, when you need it.
               </p>
             </div>
           </div>
@@ -181,8 +180,8 @@ export default async function Home() {
             <h2 className="text-4xl font-bold text-neutral-900 mb-4">
               Services That Support You
             </h2>
-            <p className="text-xl text-neutral-600">
-              From childcare to personal wellness, we've got you covered.
+            <p className="text-xl text-neutral-600 max-w-2xl mx-auto">
+              Add any service that gives you more time to rest and bond with your baby. Here are a few ideas to get you started.
             </p>
           </div>
 
@@ -213,13 +212,12 @@ export default async function Home() {
           <h2 className="text-4xl font-bold text-white mb-6">
             Ready to Start Your PamperMomma Journey?
           </h2>
-          <p className="text-xl text-primary-100 mb-8">
-            Join thousands of moms who have found the support they deserve.
-            Sign up today and get your first service at 20% off.
+          <p className="text-xl text-primary-100 mb-8 max-w-3xl mx-auto">
+            Create your free pamper registry today and build the postpartum support system you deserve.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link href="/onboarding" className="rounded-full transition-colors bg-white text-primary-600 hover:bg-yellow-100! text-lg px-8 py-4">Get Started Free</Link>
-            <Link href="" className="border rounded-full transition-colors border-white text-white hover:bg-white hover:text-primary-600 text-lg px-8 py-4">Watch Demo</Link>
+            <Link href="/onboarding" className="rounded-full transition-colors bg-white text-primary-600 hover:bg-yellow-100! text-lg px-8 py-4">Create My Registry</Link>
+            <Link href="#features" className="border rounded-full transition-colors border-white text-white hover:bg-white hover:text-primary-600 text-lg px-8 py-4">How It Works</Link>
 
           </div>
         </div>

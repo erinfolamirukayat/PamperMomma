@@ -14,26 +14,44 @@ type ServiceListCardProps = Readonly<{
     totalHours: number;
     costPerHour: number;
     isActive?: boolean;
+    // For selection mode
+    onSelect?: () => void;
+    isSelected?: boolean;
+    // For list mode
     onDelete?: () => void;
 }>;
 
 export function ServiceListCard(props: ServiceListCardProps) {
-    // This is a card component to display a service in the list
     return (
-        <div className="flex flex-col p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow border border-neutral-200">
+        <div onClick={props.onSelect} className={clx(
+            "flex flex-col p-6 rounded-lg shadow-md transition-all duration-300 border",
+            props.onSelect && "cursor-pointer",
+            props.isSelected
+                ? 'bg-primary-50 border-primary-500 ring-2 ring-primary-500 shadow-lg'
+                : 'bg-white hover:shadow-lg'
+        )}>
             <div className="flex flex-row items-start justify-between mb-3">
                 <h3 className="text-title-desktop-small text-neutral-900 font-semibold flex-1 mr-3">
                     {props.serviceName}
                 </h3>
-                <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${props.isActive
-                    ? 'bg-green-100 text-green-700 border border-green-200'
-                    : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
-                    }`}>
-                    {props.isActive ? 'Active' : 'Inactive'}
-                </span>
+                {props.onSelect ? (
+                    <Icon
+                        icon={props.isSelected ? "material-symbols:check-circle-rounded" : "material-symbols:add-circle-outline"}
+                        className={clx("h-6 w-6 flex-shrink-0 transition-colors",
+                            props.isSelected ? "text-primary-600" : "text-neutral-400"
+                        )}
+                    />
+                ) : (
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${props.isActive
+                        ? 'bg-green-100 text-green-700 border border-green-200'
+                        : 'bg-neutral-100 text-neutral-600 border border-neutral-200'
+                        }`}>
+                        {props.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                )}
             </div>
             
-            <p className="text-body-desktop-small text-neutral-600 mb-4 line-clamp-2">{props.description}</p>
+            <p className="text-body-desktop-small text-neutral-600 mb-4">{props.description}</p>
             
             <div className="flex flex-row items-center justify-between gap-4 text-label-desktop-small">
                 <div className="flex items-center gap-1 text-neutral-700">

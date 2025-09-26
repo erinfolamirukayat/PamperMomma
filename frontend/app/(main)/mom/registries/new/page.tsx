@@ -4,7 +4,7 @@ import { CreateRegistry, DefaultService, Registry } from '@/lib/services/registr
 import { useRouter } from 'next/navigation'
 import React, { useEffect, useRef, useState } from 'react'
 import { Icon } from '@iconify/react'
-import { FilledButton } from '@/components/buttons'
+import { FilledButton, OutlinedButton } from '@/components/buttons'
 import { InputField, CheckboxField, TextAreaField } from '@/components/inputs'
 import { ServiceListCard } from '@/components/cards'
 import { useHulkFetch } from 'hulk-react-utils'
@@ -14,16 +14,6 @@ function Page() {
     const router = useRouter()
     const serviceFormRef = useRef<HTMLFormElement | null>(null)
     const registryFormRef = useRef<HTMLFormElement | null>(null)
-
-    const {
-        dispatch: goRegistries,
-        data: registriesData
-    } = useHulkFetch<Registry>("/registries/r/", {
-        onSuccess(data, alert) {
-            // Navigate to next step after registry creation
-            router.push(`/mom/registries/${data.id}`)
-        },
-    })
 
     const [registry, setRegistry] = useState<CreateRegistry>({
         name: "",
@@ -36,16 +26,28 @@ function Page() {
     })
 
     const [formError, setFormError] = useState<string | null>(null);
+    const [isClient, setIsClient] = useState(false)
 
-    // Fetch default services for suggestions
+    // This must be at the top level
     const {
         dispatch: fetchDefaultServices,
         data: defaultServicesData
     } = useHulkFetch<DefaultService[]>("/registries/services/default/")
 
+    const {
+        dispatch: goRegistries,
+    } = useHulkFetch<Registry>("/registries/r/", {
+        onSuccess(data, alert) {
+            // Navigate to next step after registry creation
+            router.push(`/mom/registries/${data.id}`)
+        },
+    })
+
     useEffect(() => {
+        setIsClient(true);
         fetchDefaultServices({ method: 'GET' });
-    }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []) // Run only once on mount
 
     // Generic handler for registry form field changes
     const handleRegistryChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -168,7 +170,7 @@ function Page() {
     }
 
     return (
-        <main className='relative min-h-full flex-1'>
+        <main className='relative min-h-full flex-1 bg-neutral-50'>
             {/* Header Section */}
             <section className='px-6 sm:px-12 py-8 bg-gradient-to-r from-primary-100 to-orange-100 border-b border-neutral-200'>
                 <div className='max-w-6xl mx-auto'>
@@ -203,7 +205,7 @@ function Page() {
             </section>
 
             {/* Registry Information Section */}
-            <section className='px-6 sm:px-12 py-8 bg-white border-b border-neutral-200'>
+            <section className='px-6 sm:px-12 py-12 bg-white border-b border-neutral-200'>
                 <div className='max-w-6xl mx-auto'>
                     <h2 className='text-title-desktop-large text-neutral-900 mb-6'>Registry Information</h2>
 
@@ -272,7 +274,7 @@ function Page() {
             </section>
 
             {/* Main Content - Services Section */}
-            <section className='px-6 sm:px-12 py-8'>
+            <section className='px-6 sm:px-12 py-12'>
                 <div className='max-w-6xl mx-auto'>
                     <div className='grid grid-cols-1 lg:grid-cols-2 gap-8'>
                         {/* Services List */}
@@ -307,7 +309,7 @@ function Page() {
                         </div>
 
                         {/* Service Creation Form */}
-                        <div className='bg-white rounded-2xl p-6 shadow-sm border border-neutral-200 h-fit sticky top-8'>
+                        <div className='bg-white rounded-2xl p-8 shadow-sm border border-neutral-200 h-fit sticky top-8'>
                             <h2 className='text-title-desktop-large text-neutral-900 mb-6'>Add Service</h2>
 
                             <form onSubmit={handleAddService} ref={serviceFormRef} className='space-y-4'>
@@ -387,24 +389,17 @@ function Page() {
                             {defaultServicesData && defaultServicesData.length > 0 && (
                                 <div className='mt-6 pt-4 border-t border-neutral-200'>
                                     <h3 className='text-title-desktop-small text-neutral-900 mb-3'>Popular Services</h3>
-                                    <div className='flex flex-wrap gap-2'>
+                                    <div className='flex flex-wrap gap-3'>
                                         {defaultServicesData.slice(0, 6).map((service, index) => (
-                                            <button
+                                            <OutlinedButton
                                                 key={index}
                                                 type="button"
                                                 onClick={() => {
-                                                    if (serviceFormRef.current) {
-                                                        const form = serviceFormRef.current
-                                                        form.serviceName.value = service.name
-                                                        form.description.value = service.description
-                                                        form.hours.value = service.hours.toString()
-                                                        form.cost_per_hour.value = service.cost_per_hour
-                                                    }
+                                                    handleServiceSuggestion({ target: { value: service.name } } as React.ChangeEvent<HTMLInputElement>);
                                                 }}
-                                                className='px-3 py-1 text-xs bg-primary-100 text-primary-700 rounded-full hover:bg-primary-200 transition-colors'
                                             >
-                                                {service.name}
-                                            </button>
+                                                {service.name.split('(')[0].trim()}
+                                            </OutlinedButton>
                                         ))}
                                     </div>
                                 </div>
@@ -414,41 +409,6 @@ function Page() {
 
                     {/* Submit Section */}
                     {(registry.services?.length ?? 0) > 0 && (
-                        // <div className='mt-8 bg-gradient-to-r from-green-50 to-primary-50 rounded-2xl p-6 border border-green-200'>
-                        //     <div className='flex flex-col sm:flex-row items-center justify-between gap-4'>
-                        //         <div>
-                        //             <h3 className='text-title-desktop text-neutral-900 mb-1'>
-                        //                 Ready to Create Registry?
-                        //             </h3>
-                        //             <p className='text-body-desktop text-neutral-600'>
-                        //                 You have {registry.services?.length} service{(registry.services?.length ?? 0) !== 1 ? 's' : ''} ready.
-                        //                 Complete your registry information to continue.
-                        //             </p>
-                        //         </div>
-                        //         <div className='flex gap-3'>
-                        //             <button
-                        //                 onClick={() => setRegistry(prev => ({ ...prev, services: [] }))}
-                        //                 className='px-4 py-2 text-neutral-600 hover:text-neutral-800 transition-colors text-label-desktop'
-                        //             >
-                        //                 Clear All
-                        //             </button>
-                        //             <FilledButton
-                        //                 onClick={() => {
-                        //                     if (registryFormRef.current) {
-                        //                         registryFormRef.current.requestSubmit()
-                        //                     } else {
-                        //                         console.error("Registry form reference is not set")
-                        //                     }
-                        //                 }}
-                        //                 disabled={!registry.name.trim()}
-                        //                 className='flex items-center gap-2'
-                        //             >
-                        //                 <Icon icon="material-symbols-light:check" className="h-5 w-5" />
-                        //                 Create Registry
-                        //             </FilledButton>
-                        //         </div>
-                        //     </div>
-                        // </div>
                         <QuickActions
                             title='Ready to Create Your Pamper Registry?'
                             descrption={`You have ${registry.services?.length ?? 0} service${(registry.services?.length ?? 0) !== 1 ? 's' : ''} ready. Complete your registry information to continue.`}

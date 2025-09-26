@@ -128,6 +128,13 @@ class Service(models.Model):
         verbose_name=_("Is Active"),
         help_text=_("Indicates if the service is currently active."),
     )
+    total_withdrawn = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=Decimal('0.00'),
+        verbose_name=_("Total Withdrawn"),
+        help_text=_("The total amount withdrawn for this service."),
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_("Created At"),
