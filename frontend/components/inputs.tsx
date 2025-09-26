@@ -81,8 +81,6 @@ export function RegistryLinkField(props: RegistryLinkFieldProps) {
     // This is a reusable widget component for registry links
     const field = useRef(null as HTMLDivElement | null);
     const sharablelink = `https://pampermomma.com/my/${props.sharableId}`;
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://pampermomma.com';
-    const sharablelink = `${siteUrl}/contribute/${props.sharableId}`;
     const copyLinkHandler = async () => {
         await navigator.clipboard.writeText(sharablelink);
         if (field.current) {
