@@ -281,6 +281,13 @@ LOGGING = {
         'django': {
             'handlers': ['console', 'file'],  # Add the file handler here
             'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': True,
+        },
+        # This is the 'root' logger. It will catch all logs from any app
+        # that doesn't have a specific logger defined.
+        '': {
+            'handlers': ['console', 'file'],
+            'level': 'INFO',
         },
     },
 }

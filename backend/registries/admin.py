@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from .models import (Registry, Service, SharedRegistry, Contribution, DefaultRegistry, DefaultService)
+from .models import (Registry, Service, SharedRegistry, Contribution, DefaultRegistry, DefaultService, Withdrawal)
 
 
 @admin.register(Registry)
@@ -26,6 +26,12 @@ class ContributionAdmin(admin.ModelAdmin):
     list_display = ('service', 'contributor_name', 'amount', 'status', 'created_at')
     search_fields = ('service__name', 'contributor_name', 'contributor_email', 'stripe_payment_intent_id')
     list_filter = ('created_at', 'status')
+
+@admin.register(Withdrawal)
+class WithdrawalAdmin(admin.ModelAdmin):
+    list_display = ('registry', 'amount', 'status', 'stripe_transfer_id', 'created_at')
+    search_fields = ('registry__name', 'stripe_transfer_id')
+    list_filter = ('status', 'created_at')
 
 # @admin.register(VolunteerContribution)
 # class VolunteerContributionAdmin(admin.ModelAdmin):
