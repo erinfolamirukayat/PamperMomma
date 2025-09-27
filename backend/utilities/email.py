@@ -4,6 +4,9 @@ from babel.dates import format_timedelta
 from datetime import timedelta
 from decimal import Decimal
 from django.template.loader import render_to_string
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class EmailDispatcher:
@@ -55,6 +58,7 @@ class EmailDispatcher:
             'amount': f"{amount:.2f}",
             'registry_name': registry_name,
         }
+        logger.info("Got to send_withdrawal_verification_otp")
         EmailDispatcher.send_email(
             subject=subject,
             template_name='emails/withdrawal_verification.html',

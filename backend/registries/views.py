@@ -136,42 +136,35 @@ class RegistryViewSet(viewsets.ModelViewSet):
         """
         registry = self.get_object()
         user = request.user
-        logger.info("Initiating withdrawal 1")
 
         if registry.created_by != user:
             return Response({"detail": "You do not have permission to withdraw from this registry."}, status=status.HTTP_403_FORBIDDEN)
 
         try:
-            logger.info("Initiating withdrawal 2")
             serializer = serializers.InitiateWithdrawalSerializer(data=request.data)
             serializer.is_valid(raise_exception=True)
             amount = serializer.validated_data['amount']
 
             # Re-calculate the true withdrawable amount for validation
             now = timezone.now()
-            logger.info("Initiating withdrawal 3")
             available_contributions = models.Contribution.objects.filter(
                 service__registry=registry, status='succeeded', available_on__lte=now
             ).aggregate(total_amount=Sum('amount'), total_fee=Sum('fee'))
-            logger.info("Initiating withdrawal 4")
             net_available = (available_contributions['total_amount'] or Decimal('0.00')) - (available_contributions['total_fee'] or Decimal('0.00'))
             total_withdrawn = registry.withdrawals.filter(status__in=['pending', 'succeeded']).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
             
             available_balance = net_available - total_withdrawn
-            logger.info("Initiating withdrawal 5")
             if amount > available_balance:
                 return Response({"detail": f"Withdrawal amount exceeds available balance of ${available_balance:.2f}."}, status=status.HTTP_400_BAD_REQUEST)
 
             # Generate OTP and device identity token
             otp = OTPRequest.generate_otp()
             device_hashed_token, device_plain_token = OTPRequest.generate_device_token()
-            logger.info("Initiating withdrawal 6")
             # Store the OTP request
             ref_id = f"withdrawal:{registry.id}:{user.id}"
             OTPRequest.objects.create(
                 ref=ref_id, otp=otp, device_identity=device_hashed_token
             )
-            logger.info("Initiating withdrawal 7")
             # Send the email with the OTP
             logger.info(f"Attempting to send withdrawal verification email for registry {registry.id} to {user.email}")
             EmailDispatcher.send_withdrawal_verification_otp(
