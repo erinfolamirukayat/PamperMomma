@@ -170,10 +170,11 @@ class RegistryViewSet(viewsets.ModelViewSet):
             )
 
            # Send the email with the OTP
+            logger.info(f"Attempting to send withdrawal verification email for registry {registry.id} to {user.email}")
             EmailDispatcher.send_withdrawal_verification_otp(
                 otp=otp, email=user.email, amount=amount, registry_name=registry.name
             )
-
+            logger.info(f"Successfully sent withdrawal verification email for registry {registry.id}")
             return Response({'detail': 'Verification code sent.', 'device_identity': device_plain_token}, status=status.HTTP_200_OK)
 
         except Exception as e:
