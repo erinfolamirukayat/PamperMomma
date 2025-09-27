@@ -12,6 +12,7 @@ import logging
 from accounts.models import OTPRequest
 from drf_spectacular.utils import extend_schema
 from . import models, serializers
+import threading
 from decimal import Decimal
 from datetime import datetime
 
@@ -168,10 +169,12 @@ class RegistryViewSet(viewsets.ModelViewSet):
                 ref=ref_id, otp=otp, device_identity=device_hashed_token
             )
 
-            # Send the email with the OTP
-            EmailDispatcher.send_withdrawal_verification_otp(
-                otp=otp, email=user.email, amount=amount, registry_name=registry.name
-            )
+            # Send the email in a background thread to prevent the web worker
+            # from being killed due to memory spikes on services like Render.
+            email_thread = threading.Thread(target=EmailDispatcher.send_withdrawal_verification_otp, kwargs={
+                'otp': otp, 'email': user.email, 'amount': amount, 'registry_name': registry.name
+            })
+            email_thread.start()
 
             return Response({'detail': 'Verification code sent.', 'device_identity': device_plain_token}, status=status.HTTP_200_OK)
 
