@@ -18,6 +18,7 @@ class EmailDispatcher:
         errors that can occur from stale, reused connections.
         """
         html_message = render_to_string(template_name, context)
+        logger.info("Got to send_email")
         # Use the connection as a context manager to ensure it's properly opened and closed.
         with get_connection() as connection:
             send_mail(
@@ -58,7 +59,6 @@ class EmailDispatcher:
             'amount': f"{amount:.2f}",
             'registry_name': registry_name,
         }
-        logger.info("Got to send_withdrawal_verification_otp")
         EmailDispatcher.send_email(
             subject=subject,
             template_name='emails/withdrawal_verification.html',
