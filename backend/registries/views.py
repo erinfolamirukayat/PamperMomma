@@ -139,44 +139,46 @@ class RegistryViewSet(viewsets.ModelViewSet):
         if registry.created_by != user:
             return Response({"detail": "You do not have permission to withdraw from this registry."}, status=status.HTTP_403_FORBIDDEN)
 
-        serializer = serializers.InitiateWithdrawalSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        amount = serializer.validated_data['amount']
-
-        # Re-calculate the true withdrawable amount for validation
-        now = timezone.now()
-        available_contributions = models.Contribution.objects.filter(
-            service__registry=registry, status='succeeded', available_on__lte=now
-        ).aggregate(total_amount=Sum('amount'), total_fee=Sum('fee'))
-        
-        net_available = (available_contributions['total_amount'] or Decimal('0.00')) - (available_contributions['total_fee'] or Decimal('0.00'))
-        total_withdrawn = registry.withdrawals.filter(status__in=['pending', 'succeeded']).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
-        
-        available_balance = net_available - total_withdrawn
-        
-        if amount > available_balance:
-            return Response({"detail": f"Withdrawal amount exceeds available balance of ${available_balance:.2f}."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # Generate OTP and device identity token
-        otp = OTPRequest.generate_otp()
-        device_hashed_token, device_plain_token = OTPRequest.generate_device_token()
-        
-        # Store the OTP request
-        ref_id = f"withdrawal:{registry.id}:{user.id}"
-        OTPRequest.objects.create(
-            ref=ref_id, otp=otp, device_identity=device_hashed_token
-        )
-
         try:
+            serializer = serializers.InitiateWithdrawalSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            amount = serializer.validated_data['amount']
+
+            # Re-calculate the true withdrawable amount for validation
+            now = timezone.now()
+            available_contributions = models.Contribution.objects.filter(
+                service__registry=registry, status='succeeded', available_on__lte=now
+            ).aggregate(total_amount=Sum('amount'), total_fee=Sum('fee'))
+            
+            net_available = (available_contributions['total_amount'] or Decimal('0.00')) - (available_contributions['total_fee'] or Decimal('0.00'))
+            total_withdrawn = registry.withdrawals.filter(status__in=['pending', 'succeeded']).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+            
+            available_balance = net_available - total_withdrawn
+            
+            if amount > available_balance:
+                return Response({"detail": f"Withdrawal amount exceeds available balance of ${available_balance:.2f}."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Generate OTP and device identity token
+            otp = OTPRequest.generate_otp()
+            device_hashed_token, device_plain_token = OTPRequest.generate_device_token()
+            
+            # Store the OTP request
+            ref_id = f"withdrawal:{registry.id}:{user.id}"
+            OTPRequest.objects.create(
+                ref=ref_id, otp=otp, device_identity=device_hashed_token
+            )
+
             # Send the email with the OTP
             EmailDispatcher.send_withdrawal_verification_otp(
                 otp=otp, email=user.email, amount=amount, registry_name=registry.name
             )
-        except Exception as e:
-            logger.error(f"Error sending withdrawal verification OTP: {e}")
-            return Response({'detail': 'Failed to send verification code.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        return Response({'detail': 'Verification code sent.', 'device_identity': device_plain_token}, status=status.HTTP_200_OK)
+            return Response({'detail': 'Verification code sent.', 'device_identity': device_plain_token}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            logger.error(f"Error during withdrawal initiation for registry {registry.id}: {e}", exc_info=True)
+            # Return a generic error response that will be processed by CORS middleware
+            return Response({'detail': 'An unexpected error occurred. Please try again.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=True, methods=['post'])
     @transaction.atomic
