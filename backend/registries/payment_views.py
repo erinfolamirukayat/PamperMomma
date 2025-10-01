@@ -7,6 +7,7 @@ from django.db import transaction
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from .models import Service, Contribution
+from utilities.email import EmailDispatcher
 from .serializers import CreatePaymentIntentSerializer
 import stripe
 import logging
@@ -126,6 +127,18 @@ def stripe_webhook(request):
                         title="New Contribution Received!",
                         message=message,
                     )
+                logger.info(f"Sending contribution notification email to {service.registry.created_by.email}")
+                # Send contribution notification email
+                try:
+                    EmailDispatcher.send_contribution_notification_email(
+                        registry_name=service.registry.name,
+                        service_name=service.name,
+                        contributor_name=metadata.get('contributor_name', 'An anonymous contributor'),
+                        amount=Decimal(payment_intent.get('amount_received', 0)) / Decimal('100.0'),
+                        user_email=service.registry.created_by.email,
+                    )
+                except Exception as e:
+                    logger.error(f"Failed to send new service notification email for service {service.id}: {e}", exc_info=True)
         except Service.DoesNotExist:
             logger.error(f"Stripe Webhook: Service with ID {service_id} not found for PI {payment_intent_id}.")
             return Response({'error': 'Service not found'}, status=status.HTTP_404_NOT_FOUND)

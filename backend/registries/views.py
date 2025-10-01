@@ -285,6 +285,15 @@ class ServiceViewSet(viewsets.ModelViewSet):
         ).distinct()
 
     def create(self, request, *args, **kwargs):
+        # This custom create method handles both single and bulk service creation.
+        # The actual email sending is delegated to perform_create and perform_bulk_create.
+        is_many = isinstance(request.data, list)
+        if is_many:
+            return self.perform_bulk_create(request)
+        else:
+            return super().create(request, *args, **kwargs)
+ 
+    def perform_bulk_create(self, request):
         """
         Override create to support creating multiple services at once.
         """

@@ -67,6 +67,24 @@ class EmailDispatcher:
         )
 
     @staticmethod
+    def send_contribution_notification_email(registry_name: str, service_name: str, contributor_name: str, amount: Decimal, user_email: str):
+        """
+        Sends an email to the registry owner when a new contribution is made.
+        """
+        subject = "New contribution made to your PamperMomma registry!"
+        context = {
+            'registry_name': registry_name,
+            'service_name': service_name,
+            'contributor_name': contributor_name,
+            'amount': f"{amount:.2f}",
+        }
+        EmailDispatcher.send_email(
+            subject=subject,
+            template_name='emails/contribution_notification.html',
+            context=context,
+            recipient_list=[user_email]
+        )
+    @staticmethod
     def verify_email_otp(otp: str, email: str, web_data_url: str | None = None) -> None:
         exp_time = getattr(settings, 'OTP_EXPIRATION_TIME', 600)
         # Convert expiration time (seconds) to timedelta
