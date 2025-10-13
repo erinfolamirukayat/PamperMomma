@@ -51,7 +51,6 @@ function Page() {
                 <h1 className='text-headline-desktop-small text-center'>Start your registry and we'll support you along the way!</h1>
             </header>
             <form onSubmit={onSubmit} className='w-full max-w-96 flex flex-col gap-4'>
-                <GoogleButton className="w-full mb-3" />
                 <div className='flex flex-row gap-4'>
                     <InputField
                         name="first_name"

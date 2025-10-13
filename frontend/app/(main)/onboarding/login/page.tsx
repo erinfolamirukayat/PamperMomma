@@ -112,7 +112,6 @@ function LoginForm() {
                 </div>
             }
             <form action={loginAction} className='w-full max-w-96 flex flex-col gap-4'>
-                <GoogleButton className="w-full mb-3" />
                 <InputField labeltext='Email Address' type='email' name='email' required />
                 <InputField labeltext='Password' type='password' name='password' required />
                 <div className='flex mb-6 mt-4'>
