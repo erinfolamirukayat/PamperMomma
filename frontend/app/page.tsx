@@ -50,6 +50,7 @@ export default async function Home() {
               <a href="#features" className="text-neutral-700 hover:text-primary-600 transition-colors">Features</a>
               <a href="#services" className="text-neutral-700 hover:text-primary-600 transition-colors">Services</a>
               <a href="#about" className="text-neutral-700 hover:text-primary-600 transition-colors">About</a>
+              <Link href="/faq" className="text-neutral-700 hover:text-primary-600 transition-colors">FAQ</Link>
             </div>
 
             {isAuthenticated ? (
