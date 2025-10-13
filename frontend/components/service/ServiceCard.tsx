@@ -44,6 +44,20 @@ export function ServiceCard({ service, context, onContribute, onDelete }: Servic
             <h4 className="text-title-small font-bold text-neutral-800 mb-2">{service.name}</h4>
             <p className="text-body-small text-neutral-600 mb-4 flex-grow">{service.description}</p>
 
+            <div className="flex flex-row items-center justify-between gap-4 text-label-desktop-small mb-4">
+                <div className="flex items-center gap-1 text-neutral-700">
+                    <Icon icon="material-symbols-light:schedule-outline" className="h-5 w-5" />
+                    <span className="font-medium">{service.hours}</span>
+                    <span className="text-neutral-500">hrs</span>
+                </div>
+
+                <div className="flex items-center gap-1 text-neutral-700">
+                    {/* <Icon icon="material-symbols-light:money-outline-rounded" className="h-5 w-5" /> */}
+                    <span className="font-medium">${parseFloat(service.cost_per_hour).toFixed(2)}</span>
+                    <span className="text-neutral-500">/hr</span>
+                </div>
+            </div>
+
             <div className="mb-4">
                 <div className="flex justify-between items-center mb-1 text-body-small font-medium">
                     <span className="text-neutral-600">
