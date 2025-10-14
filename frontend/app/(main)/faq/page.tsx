@@ -73,18 +73,23 @@ const faqData: FAQItem[] = [
     },
     {
         category: "Services",
-        question: "How do I find service providers?",
-        answer: "You can browse our network of verified service providers, or add your own trusted providers. Each provider's profile includes ratings, reviews, and service details to help you make informed choices."
+        question: "How do I find and hire service providers?",
+        answer: "PamperMomma is a cash-based registry, which gives you the flexibility to hire any service provider you choose. While we don't have a built-in network of providers on the platform yet, you can use the funds you receive to pay for services from trusted local professionals you find on your own. If you need help finding providers in your area, please contact our support team, and we'd be happy to offer suggestions!"
     },
     {
         category: "Services",
-        question: "What if a service provider isn't available when I need them?",
-        answer: "We recommend booking services in advance when possible. If your preferred provider isn't available, we can help you find alternative providers with similar services and ratings."
+        question: "What if my preferred service provider isn't available?",
+        answer: "Since you book services directly with the provider, you have full control over scheduling. We recommend contacting your preferred providers to check their availability before adding a service to your registry. This ensures your supporters are contributing to a service you'll be able to use."
     },
     {
         category: "Services",
-        question: "Can I customize service details and pricing?",
-        answer: "Yes! You can set specific service requirements, preferred dates, and work with providers to customize pricing based on your needs and location."
+        question: "How do I determine the cost for a service?",
+        answer: "To make it easier, we provide a list of default services with suggested costs and hours. You can use these defaults or customize them based on your research or a quote from a local provider. We recommend getting an estimate from a local provider to ensure your registry goal is accurate, which gives your contributors a clear target to fund."
+    },
+    {
+        category: "Services",
+        question: "How do you determine the cost and hours for the default services?",
+        answer: "Our default services come with pre-filled costs and hours to give you a helpful starting point. We determine these values by researching the national average for these services across the United States. The number of hours is based on what new mothers typically need during the postpartum period. You are always free to adjust these values to better reflect the costs in your specific area or your personal needs."
     },
     {
         category: "Contributions",
