@@ -117,7 +117,7 @@ function LoginForm() {
                 <div className='flex mb-6 mt-4'>
                     <FilledButton className='mx-auto min-w-32'>Login</FilledButton>
                 </div>
-                <p className='text-label-desktop-large text-center text-neutral-800'>You don't have an account yet? <Link href="/onboarding/signup" className='text-title-desktop-small hover:text-primary-500'>Signup</Link></p>
+                <p className='text-label-desktop-large text-center text-neutral-800'>You don't have an account yet? <Link href="/onboarding" className='text-title-desktop-small hover:text-primary-500'>Signup</Link></p>
             </form>
         </main>
     )
