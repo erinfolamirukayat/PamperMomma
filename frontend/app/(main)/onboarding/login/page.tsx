@@ -9,7 +9,7 @@ import { CreateRegistry, Registry } from '@/lib/services/registry/types'
 import { useHulk, useHulkAlert, useHulkFetch } from 'hulk-react-utils'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { Suspense, useActionState, useEffect } from 'react'
+import React, { Suspense, useActionState, useEffect, useState } from 'react'
 
 
 function LoginForm() {
@@ -19,6 +19,13 @@ function LoginForm() {
     const [state, loginAction, isPending] = useActionState(login, null)
     const searchParams = useSearchParams()
     const isSignupSuccess = searchParams.get('signup') === 'success';   
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    const handleInputChange = () => {
+        if (errorMessage) {
+            setErrorMessage(null);
+        }
+    };
 
     const {
         dispatch: goRegistries,
@@ -76,15 +83,7 @@ function LoginForm() {
             }
         } else if (state?.status === 'error') {
             // Handle error state, e.g., show a notification or alert
-            console.error('Login failed:', state.error);
-            const alertId = 'login-error-modal';
-            alert?.push(
-                <ErrorModal
-                    error={state.error}
-                    onClose={() => alert?.pop({ alertId })}
-                />,
-                { alertId }
-            );
+            setErrorMessage("Incorrect username or password. Please try again.");
         }
     }, [state])
 
@@ -111,9 +110,14 @@ function LoginForm() {
                     <p className='text-label-desktop-large text-center'>Signup successful! Please login to continue.</p>
                 </div>
             }
+            {errorMessage && (
+                <div className='w-full max-w-96 mb-6 p-4 border border-red-300 bg-red-50 text-red-800 rounded'>
+                    <p className='text-label-desktop-large text-center'>{errorMessage}</p>
+                </div>
+            )}
             <form action={loginAction} className='w-full max-w-96 flex flex-col gap-4'>
-                <InputField labeltext='Email Address' type='email' name='email' required />
-                <InputField labeltext='Password' type='password' name='password' required />
+                <InputField labeltext='Email Address' type='email' name='email' required onChange={handleInputChange} />
+                <InputField labeltext='Password' type='password' name='password' required onChange={handleInputChange} />
                 <div className='flex mb-6 mt-4'>
                     <FilledButton className='mx-auto min-w-32'>Login</FilledButton>
                 </div>
