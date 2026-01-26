@@ -245,6 +245,18 @@ class RegistryViewSet(viewsets.ModelViewSet):
                 status='pending',
                 stripe_transfer_id=transfer.id
             )
+
+            # Send email notification to admin
+            try:
+                EmailDispatcher.send_withdrawal_notification(
+                    amount=amount_to_withdraw,
+                    user_email=user.email,
+                    registry_name=registry.name,
+                    transfer_id=transfer.id
+                )
+            except Exception as e:
+                logger.error(f"Failed to send withdrawal notification email: {e}")
+
             return Response({"status": "success", "message": "Withdrawal initiated successfully. It may take a few business days to appear in your account.", "transfer_id": transfer.id}, status=status.HTTP_200_OK)
         except stripe.error.StripeError as e:
             return Response({"detail": f"An error occurred with our payment processor: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
