@@ -100,3 +100,32 @@ class EmailDispatcher:
             context={'message': html_message},
             recipient_list=[email]
         )
+
+    @staticmethod
+    def send_withdrawal_notification(amount, user_email, registry_name, transfer_id):
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        subject = f"New Withdrawal Initiated: {registry_name}"
+        message = f"""
+        A new withdrawal has been initiated.
+        
+        Registry: {registry_name}
+        User Email: {user_email}
+        Amount: ${amount}
+        Stripe Transfer ID: {transfer_id}
+        
+        Please check the Stripe dashboard for details.
+        """
+        
+        # Ensure you have ADMIN_EMAIL set in your settings.py, or replace this with your email string
+        admin_email = getattr(settings, 'ADMIN_EMAIL', 'admin@pampermomma.com')
+        
+        send_mail(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [admin_email],
+            fail_silently=False,
+        )
+    

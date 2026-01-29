@@ -17,9 +17,9 @@
     "@stripe/stripe-js": "^7.9.0",
     "gsap": "^3.13.0",
     "hulk-react-utils": "^1.0.6",
-    "next": "^15.5.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "next": "^16.1.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -35,7 +35,8 @@
   "overrides": {
     "hulk-react-utils": {
       "react": "$react",
-      "react-dom": "$react-dom"
+      "react-dom": "$react-dom",
+      "next": "$next"
     }
   }
 }
