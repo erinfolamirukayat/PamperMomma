@@ -322,6 +322,8 @@ class Withdrawal(TimeStampedBaseModel):
         max_length=255,
         unique=True,
         db_index=True,
+        null=True,
+        blank=True,
         verbose_name=_("Stripe Transfer ID"),
     )
 

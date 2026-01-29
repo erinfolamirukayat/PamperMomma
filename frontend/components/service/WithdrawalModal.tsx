@@ -13,7 +13,7 @@ interface WithdrawalModalProps {
     onSuccess: () => void;
 }
 
-type Step = 'amount' | 'verify';
+type Step = 'amount' | 'verify' | 'success';
 
 export function WithdrawalModal({ isOpen, onClose, availableBalance, onSuccess }: WithdrawalModalProps) {
     const { registryId } = useParams();
@@ -23,6 +23,7 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance, onSuccess }
     const [deviceIdentity, setDeviceIdentity] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     const { dispatch: initiateWithdrawal } = useHulkFetch<{ device_identity: string }>(
         `/registries/r/${registryId}/initiate-withdrawal-verification/`, {
@@ -37,11 +38,12 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance, onSuccess }
         }
     });
 
-    const { dispatch: finalizeWithdrawal } = useHulkFetch(
+    const { dispatch: finalizeWithdrawal } = useHulkFetch<{ message: string }>(
         `/registries/r/${registryId}/withdraw/`, {
-        onSuccess: () => {
+        onSuccess: (data) => {
             onSuccess();
-            onClose();
+            setSuccessMessage(data.message);
+            setStep('success');
             setIsLoading(false);
         },
         onError: (e) => {
@@ -133,6 +135,21 @@ export function WithdrawalModal({ isOpen, onClose, availableBalance, onSuccess }
                             {isLoading ? <Icon icon="line-md:loading-twotone-loop" className="h-6 w-6" /> : 'Verify & Withdraw'}
                         </FilledButton>
                     </form>
+                )}
+
+                {step === 'success' && (
+                    <div className="text-center">
+                        <div className='bg-green-100 p-6 rounded-full w-24 h-24 mx-auto mb-6 flex items-center justify-center'>
+                            <Icon icon="material-symbols:check-circle-outline-rounded" className="h-12 w-12 text-green-600" />
+                        </div>
+                        <h2 className="text-title-desktop font-bold mb-2">Success</h2>
+                        <p className="text-body-desktop text-neutral-600 mb-6">
+                            {successMessage}
+                        </p>
+                        <FilledButton onClick={onClose} className="w-full bg-green-600 hover:bg-green-700">
+                            Close
+                        </FilledButton>
+                    </div>
                 )}
             </div>
         </div>

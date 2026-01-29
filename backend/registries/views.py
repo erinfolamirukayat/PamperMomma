@@ -231,19 +231,19 @@ class RegistryViewSet(viewsets.ModelViewSet):
 
         try:
             # Create a Stripe Transfer to the connected account
-            transfer = stripe.Transfer.create(
-                amount=int(amount_to_withdraw * 100),  # Amount in cents
-                currency="usd",
-                destination=user.stripe_account_id,
-                description=f"Withdrawal for PamperMomma registry: {registry.name}"
-            )
+            # transfer = stripe.Transfer.create(
+            #     amount=int(amount_to_withdraw * 100),  # Amount in cents
+            #     currency="usd",
+            #     destination=user.stripe_account_id,
+            #     description=f"Withdrawal for PamperMomma registry: {registry.name}"
+            # )
 
             # Record the withdrawal in our database with a pending status
             withdrawal = models.Withdrawal.objects.create(
                 registry=registry,
                 amount=amount_to_withdraw,
                 status='pending',
-                stripe_transfer_id=transfer.id
+                stripe_transfer_id=None
             )
 
             # Send email notification to admin
@@ -252,12 +252,12 @@ class RegistryViewSet(viewsets.ModelViewSet):
                     amount=amount_to_withdraw,
                     user_email=user.email,
                     registry_name=registry.name,
-                    transfer_id=transfer.id
+                    transfer_id="PENDING_MANUAL_REVIEW"
                 )
             except Exception as e:
                 logger.error(f"Failed to send withdrawal notification email: {e}")
 
-            return Response({"status": "success", "message": "Withdrawal initiated successfully. It may take a few business days to appear in your account.", "transfer_id": transfer.id}, status=status.HTTP_200_OK)
+            return Response({"status": "success", "message": "Withdrawal request received. We are processing your payout."}, status=status.HTTP_200_OK)
         except stripe.error.StripeError as e:
             return Response({"detail": f"An error occurred with our payment processor: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
