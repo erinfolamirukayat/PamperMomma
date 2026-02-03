@@ -119,7 +119,7 @@ class EmailDispatcher:
         """
         
         # Ensure you have ADMIN_EMAIL set in your settings.py, or replace this with your email string
-        admin_email = getattr(settings, 'ADMIN_EMAIL', 'admin@pampermomma.com')
+        admin_email = getattr(settings, 'ADMIN_EMAIL', 'info@pampermomma.com')
         
         send_mail(
             subject,
